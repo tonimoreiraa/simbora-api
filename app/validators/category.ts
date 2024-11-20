@@ -8,6 +8,6 @@ export const createCategorySchema = vine.compile(
         image: vine.file({
             extnames: ['png', 'jpg', 'jpeg'],
             size: '4mb',
-        }).optional(),
+        }),
     })
 )

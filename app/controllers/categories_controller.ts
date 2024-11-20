@@ -6,8 +6,12 @@ import app from '@adonisjs/core/services/app'
 
 export default class CategoriesController {
 
-  async index({}: HttpContext) {
-    const categories = await Category.all()
+  async index({ request }: HttpContext) {
+    
+    const category = request.input('categoryId')
+    const categories = await Category.query()
+      .if(category, query => query.where('category_id', category))
+        
     return categories.map(category => category.serialize())
   }
 

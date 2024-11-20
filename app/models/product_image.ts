@@ -14,7 +14,4 @@ export default class ProductImage extends BaseModel {
 
   @column()
   declare path: string
-
-  @column()
-  declare path: BelongsTo<typeof Product>
 }

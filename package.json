@@ -12,7 +12,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit",
-    "heroku-postbuild": "./build/ace.js migration:run --force"
+    "heroku-postbuild": "cd build && pnpm install && node ./ace.js migration:run --force"
   },
   "imports": {
     "#controllers/*": "./app/controllers/*.js",

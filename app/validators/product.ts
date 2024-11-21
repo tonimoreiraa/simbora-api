@@ -9,14 +9,18 @@ export const createProductSchema = vine.compile(
             .exists(async (db, value) => !!(await db.query().select('id').from('suppliers').where('id', value).first())),
         categoryId: vine.number().positive()
             .exists(async (db, value) => !!(await db.query().select('id').from('categories').where('id', value).first())),
-        tags: vine.array(vine.string()).nullable(),
+        tags: vine.string().optional().transform(t => t.split(',').map(v => v.trim())),
         stock: vine.number().positive().withoutDecimals().optional(),
         images: vine.array(
             vine.file({
                 extnames: ['png', 'jpeg', 'jpg'],
                 size: '2mb'
             })
-        ).optional()
+        ).optional(),
+        image: vine.file({
+            extnames: ['png', 'jpeg', 'jpg'],
+            size: '2mb'
+        })
     })
 )
 

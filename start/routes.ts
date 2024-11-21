@@ -12,11 +12,13 @@ import router from '@adonisjs/core/services/router'
 
 const AuthController = () => import('#controllers/auth_controller')
 const CategoriesController = () => import('#controllers/categories_controller')
+const ProductsController = () => import('#controllers/products_controller')
 
 router.post('/auth/sign-up', [AuthController, 'signUp'])
 router.post('/auth/sign-in', [AuthController, 'signIn'])
 
 router.resource('/categories', CategoriesController)
+router.resource('/products', ProductsController)
 
 router.get('/uploads/:file', async ({ response, params }) => {
     const filePath = app.tmpPath(`uploads/${params.file}`)

@@ -4,6 +4,7 @@ import { Category } from './category.js'
 import { ProductVariant } from './product_variant.js'
 import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 import ProductImage from './product_image.js'
+import { DateTime } from 'luxon'
 
 export class Product extends BaseModel {
   @column({ isPrimary: true })
@@ -11,9 +12,6 @@ export class Product extends BaseModel {
 
   @column()
   declare name: string
-
-  @column()
-  declare photo: string
 
   @column()
   declare price: number
@@ -27,7 +25,11 @@ export class Product extends BaseModel {
   @column()
   declare categoryId: number
 
-  @column()
+  @column({
+    prepare: (value) => {
+      return JSON.stringify(value)
+    },
+  })
   declare tags: string[]|null
 
   @column()
@@ -44,4 +46,10 @@ export class Product extends BaseModel {
 
   @hasMany(() => ProductImage)
   declare images: HasMany<typeof ProductImage>
+
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
 }

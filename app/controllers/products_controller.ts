@@ -21,11 +21,12 @@ export default class ProductsController {
                     .map((word: string) => `%${word}%`)
                 for (let condition of conditions) {
                     condition = `%${condition}%`
-                    query.orWhere('tabs', 'ILIKE', condition)
-                        .orWhere('title', 'ILIKE', condition)
+                    query.orWhere('name', 'ILIKE', condition)
                         .orWhere('description', 'ILIKE', condition)
                 }
             })
+            .preload('images')
+            .preload('supplier')
             .if(categoryId, query => query.where('category_id', categoryId))
             .if(groupByCategory, query => query.groupBy('category_id'))
             .paginate(page, perPage)
@@ -37,13 +38,17 @@ export default class ProductsController {
     {
         let {
             images,
+            image,
             ...payload
         } = await request.validateUsing(createProductSchema)
 
         const product = await Product.create(payload)
 
+        if (image) {
+            images = images ? [...images, image] : [image]
+        }
         if (images) {
-            const imagesDir = app.makePath('storage/uploads')
+            const imagesDir = app.tmpPath('uploads')
             let imagePaths: string[] = []
             for (const image of images) {
                 await image.move(imagesDir, {

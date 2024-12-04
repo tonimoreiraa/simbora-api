@@ -9,7 +9,7 @@ export const createAddressSchema = vine.compile(
         neighborhood: vine.string(),
         city: vine.string(),
         state: vine.string(),
-        postalCode: vine.string(),
-        country: vine.string(),
+        zipCode: vine.string(),
+        country: vine.string().optional(),
     })
 )

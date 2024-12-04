@@ -4,8 +4,7 @@ import type { HttpContext } from '@adonisjs/core/http'
 
 export default class UserAddressesController {
 
-    async index({ auth }: HttpContext)
-    {
+    async index({ auth }: HttpContext) {
         const user = auth.getUserOrFail()
         const addresses = await UserAddress.query()
             .where('user_id', user.id)
@@ -13,12 +12,13 @@ export default class UserAddressesController {
         return addresses;
     }
 
-    async store({ request, auth }: HttpContext)
-    {
+    async store({ request, auth }: HttpContext) {
         const user = auth.getUserOrFail()
-        const payload = request.validateUsing(
+        const payload = await request.validateUsing(
             createAddressSchema
         )
+
+        payload.country = payload.country ?? 'Brasil'
 
         const address = await UserAddress.create({
             userId: user.id,
@@ -28,8 +28,7 @@ export default class UserAddressesController {
         return address;
     }
 
-    async show({ request, auth }: HttpContext)
-    {
+    async show({ request, auth }: HttpContext) {
         const user = auth.getUserOrFail()
         const addressId = request.param('id')
 
@@ -41,8 +40,7 @@ export default class UserAddressesController {
         return address.serialize();
     }
 
-    async destroy({ request, auth, response }: HttpContext)
-    {
+    async destroy({ request, auth, response }: HttpContext) {
         const user = auth.getUserOrFail()
         const addressId = request.param('id')
 

@@ -1,14 +1,6 @@
-/*
-|--------------------------------------------------------------------------
-| Routes file
-|--------------------------------------------------------------------------
-|
-| The routes file is used for defining the HTTP routes.
-|
-*/
-
 import app from '@adonisjs/core/services/app'
 import router from '@adonisjs/core/services/router'
+import { middleware } from './kernel.js'
 
 const AuthController = () => import('#controllers/auth_controller')
 const CategoriesController = () => import('#controllers/categories_controller')
@@ -20,8 +12,11 @@ router.post('/auth/sign-in', [AuthController, 'signIn'])
 
 router.resource('/categories', CategoriesController)
 router.resource('/products', ProductsController)
-router.resource('/user-addresses', UserAddressesController)
-    .only(['create', 'destroy', 'index', 'show'])
+
+router.group(() => {
+    router.resource('/user-addresses', UserAddressesController)
+        .only(['store', 'destroy', 'index', 'show'])
+}).middleware(middleware.auth())
 
 router.get('/uploads/:file', async ({ response, params }) => {
     const filePath = app.tmpPath(`uploads/${params.file}`)

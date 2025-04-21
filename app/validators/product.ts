@@ -1,5 +1,37 @@
 import vine from '@vinejs/vine'
 
+const variantType = {
+    variantTypeId: vine.number().positive()
+        .exists(async (db, value) => !!(await db.query().select('id').from('product_variant_types').where('id', value).first())),
+    value: vine.string(),
+    unit: vine.string().optional(),
+    price: vine.number().positive(),
+    photo: vine.file({
+        extnames: ['png', 'jpeg', 'jpg'],
+        size: '2mb'
+    }).optional(),
+}
+
+export const createProductVariantSchema = vine.compile(
+    vine.object({
+        ...variantType,
+        productId: vine.number().positive()
+            .exists(async (db, value) => !!(await db.query().select('id').from('products').where('id', value).first())),
+    })
+)
+
+export const updateProductVariantSchema = vine.compile(
+    vine.object({
+        value: vine.string().optional(),
+        unit: vine.string().optional(),
+        price: vine.number().positive().optional(),
+        photo: vine.file({
+            extnames: ['png', 'jpeg', 'jpg'],
+            size: '2mb'
+        }).optional(),
+    })
+)
+
 export const createProductSchema = vine.compile(
     vine.object({
         name: vine.string(),
@@ -20,7 +52,10 @@ export const createProductSchema = vine.compile(
         image: vine.file({
             extnames: ['png', 'jpeg', 'jpg'],
             size: '2mb'
-        })
+        }),
+        variants: vine.array(
+            vine.object(variantType)
+        ).optional(),
     })
 )
 

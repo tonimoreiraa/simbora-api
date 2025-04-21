@@ -11,7 +11,10 @@ export class ProductVariant extends BaseModel {
   declare productId: number
 
   @column()
-  declare variantType: string
+  declare variantTypeId: number
+
+  @belongsTo(() => ProductVariantType)
+  declare variantType: BelongsTo<typeof ProductVariantType>
 
   @column()
   declare value: string

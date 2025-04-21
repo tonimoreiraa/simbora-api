@@ -4,6 +4,7 @@ import type { HttpContext } from '@adonisjs/core/http'
 import app from '@adonisjs/core/services/app'
 import { cuid } from '@adonisjs/core/helpers'
 import ProductImage from '#models/product_image'
+import { ProductVariantType } from '#models/product_variant_type'
 
 export default class ProductsController {
 
@@ -39,6 +40,7 @@ export default class ProductsController {
         let {
             images,
             image,
+            variants,
             ...payload
         } = await request.validateUsing(createProductSchema)
 
@@ -65,6 +67,24 @@ export default class ProductsController {
             )
         }
 
+        if (variants) {
+            const variantsPayload = await Promise.all(variants.map(async (variant) => {
+                const variantType = await ProductVariantType.findOrFail(variant.variantTypeId)
+                if (variant.unit === null) variant.unit = variantType.defaultUnit
+                if (variant.photo) {
+                    const photoName = `${cuid()}.${variant.photo.extname}`
+                    variant.photo.move(app.tmpPath('uploads'), {
+                        name: photoName
+                    })
+                    return {
+                        ...variant, photo: photoName
+                    }
+                }
+                return { ...variant, photo: undefined };
+            }))
+            await product.related('variants').createMany(variantsPayload)
+        }
+
         return product.serialize()
     }
 
@@ -75,7 +95,7 @@ export default class ProductsController {
             .where('id', productId)
             .preload('category', query => query.select('id', 'name'))
             .preload('supplier', query => query.select('id', 'name'))
-            .preload('variants')
+            .preload('variants', query => query.preload('variantType'))
             .preload('images', query => query.select('path', 'product_id', 'id'))
             .firstOrFail()
 

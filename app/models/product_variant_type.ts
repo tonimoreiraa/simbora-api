@@ -9,6 +9,9 @@ export class ProductVariantType extends BaseModel {
   @column()
   declare name: string
 
+  @column()
+  declare defaultUnit: string
+
   @hasMany(() => ProductVariant)
   declare variants: HasMany<typeof ProductVariant>
 }

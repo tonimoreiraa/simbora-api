@@ -5,6 +5,7 @@ import { OrderPayment } from './order_payment.js'
 import { OrderItem } from './order_item.js'
 import { OrderUpdate } from './order_update.js'
 import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
+import { DateTime } from 'luxon'
 
 export class Order extends BaseModel {
   @column({ isPrimary: true })
@@ -48,4 +49,10 @@ export class Order extends BaseModel {
 
   @hasMany(() => OrderUpdate)
   declare updates: HasMany<typeof OrderUpdate>
+
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
 }

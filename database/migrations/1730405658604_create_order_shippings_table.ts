@@ -5,12 +5,23 @@ export default class extends BaseSchema {
 
   async up() {
     this.schema.createTable(this.tableName, (table) => {
-      table.integer('order_id').unsigned().primary().references('id').inTable('orders').onDelete('CASCADE')
+      table
+        .integer('order_id')
+        .unsigned()
+        .primary()
+        .references('id')
+        .inTable('orders')
+        .onDelete('CASCADE')
       table.integer('user_id').unsigned().references('id').inTable('users').onDelete('CASCADE')
       table.decimal('price', 10, 2).notNullable()
       table.string('provider').notNullable()
       table.string('shipping_code').notNullable()
-      table.integer('address_id').unsigned().references('id').inTable('user_addresses').onDelete('CASCADE')
+      table
+        .integer('address_id')
+        .unsigned()
+        .references('id')
+        .inTable('user_addresses')
+        .onDelete('CASCADE')
       table.string('address').notNullable()
       table.string('number').notNullable()
       table.string('country').notNullable()

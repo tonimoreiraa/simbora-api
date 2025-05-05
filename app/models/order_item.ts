@@ -3,6 +3,7 @@ import { Order } from './order.js'
 import { Product } from './product.js'
 import { ProductVariant } from './product_variant.js'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
+import { DateTime } from 'luxon'
 
 export class OrderItem extends BaseModel {
   @column({ isPrimary: true })
@@ -34,4 +35,10 @@ export class OrderItem extends BaseModel {
 
   @belongsTo(() => ProductVariant)
   declare variant: BelongsTo<typeof ProductVariant>
+
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
 }

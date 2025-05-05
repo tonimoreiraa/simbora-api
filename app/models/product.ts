@@ -30,7 +30,7 @@ export class Product extends BaseModel {
       return JSON.stringify(value)
     },
   })
-  declare tags: string[]|null
+  declare tags: string[] | null
 
   @column()
   declare stock: number

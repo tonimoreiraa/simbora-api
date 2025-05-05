@@ -6,7 +6,7 @@ export default class extends BaseSchema {
   async up() {
     this.schema.createTable(this.tableName, (table) => {
       table.string('id').notNullable().unique()
-      
+
       table.integer('order_id').references('orders.id')
       table.integer('user_id').notNullable().references('users.id')
       table.integer('shared_with_user_id').references('users.id')

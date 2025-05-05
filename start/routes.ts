@@ -13,12 +13,15 @@ router.post('/auth/sign-in', [AuthController, 'signIn'])
 router.resource('/categories', CategoriesController)
 router.resource('/products', ProductsController)
 
-router.group(() => {
-    router.resource('/user-addresses', UserAddressesController)
-        .only(['store', 'destroy', 'index', 'show'])
-}).middleware(middleware.auth())
+router
+  .group(() => {
+    router
+      .resource('/user-addresses', UserAddressesController)
+      .only(['store', 'destroy', 'index', 'show'])
+  })
+  .middleware(middleware.auth())
 
 router.get('/uploads/:file', async ({ response, params }) => {
-    const filePath = app.tmpPath(`uploads/${params.file}`)
-    response.attachment(filePath, params.file)
+  const filePath = app.tmpPath(`uploads/${params.file}`)
+  response.attachment(filePath, params.file)
 })

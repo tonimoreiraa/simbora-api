@@ -5,14 +5,13 @@ import type { HttpContext } from '@adonisjs/core/http'
 import app from '@adonisjs/core/services/app'
 
 export default class CategoriesController {
-
   async index({ request }: HttpContext) {
-    
     const category = request.input('categoryId')
-    const categories = await Category.query()
-      .if(category, query => query.where('category_id', category))
-        
-    return categories.map(category => category.serialize())
+    const categories = await Category.query().if(category, (query) =>
+      query.where('category_id', category)
+    )
+
+    return categories.map((category) => category.serialize())
   }
 
   async store({ request }: HttpContext) {
@@ -21,7 +20,7 @@ export default class CategoriesController {
       await Category.findOrFail(payload.categoryId)
     }
 
-    let imageName: string|undefined
+    let imageName: string | undefined
     if (image) {
       imageName = `${cuid()}.${image.extname}`
       await image.move(app.tmpPath('uploads'), { name: imageName })
@@ -33,10 +32,7 @@ export default class CategoriesController {
   }
 
   async show({ params }: HttpContext) {
-    const category = await Category.query()
-      .where('id', params.id)
-      .preload('category')
-      .firstOrFail()
+    const category = await Category.query().where('id', params.id).preload('category').firstOrFail()
     return category
   }
 
@@ -47,7 +43,7 @@ export default class CategoriesController {
       await Category.findOrFail(payload.categoryId)
     }
 
-    let imageName: string|undefined
+    let imageName: string | undefined
     if (image) {
       imageName = `${cuid()}.${image.extname}`
       await image.move(app.tmpPath('uploads'), { name: imageName })

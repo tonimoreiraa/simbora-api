@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    ports:
+      - '5432:5432'
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_DB=app
+    volumes:
+      - app_pg_data:/var/lib/postgresql/data
+    networks:
+      - pgnet
+
+  pg-admin:
+    image: dpage/pgadmin4
+    restart: unless-stopped
+    ports:
+      - '7076:80'
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=docker@dev.com
+      - PGADMIN_DEFAULT_PASSWORD=docker
+    depends_on:
+      - postgres
+    networks:
+      - pgnet
+
+networks:
+  pgnet:
+    driver: bridge
+
+volumes:
+  app_pg_data:

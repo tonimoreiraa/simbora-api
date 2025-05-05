@@ -15,7 +15,7 @@ export class Category extends BaseModel {
   declare category: BelongsTo<typeof Category>
 
   @column({
-    serialize: (value) => env.get('PUBLIC_URL') + '/uploads/' + value
+    serialize: (value) => env.get('PUBLIC_URL') + '/uploads/' + value,
   })
   declare image: string
 

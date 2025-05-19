@@ -14,9 +14,6 @@ export class ProductVariant extends BaseModel {
   @column()
   declare variantTypeId: number
 
-  @belongsTo(() => ProductVariantType)
-  declare variantType: BelongsTo<typeof ProductVariantType>
-
   @column()
   declare value: string
 
@@ -32,7 +29,9 @@ export class ProductVariant extends BaseModel {
   @belongsTo(() => Product)
   declare product: BelongsTo<typeof Product>
 
-  @belongsTo(() => ProductVariantType)
+  @belongsTo(() => ProductVariantType, {
+    foreignKey: 'variantTypeId',
+  })
   declare type: BelongsTo<typeof ProductVariantType>
 
   @column.dateTime({ autoCreate: true })

@@ -42,11 +42,11 @@ export default class ProductsController {
     if (images) {
       const imagesDir = app.tmpPath('uploads')
       let imagePaths: string[] = []
-      for (const image of images) {
-        await image.move(imagesDir, {
-          name: `${cuid()}.${image.extname}`,
+      for (const uploadedImage of images) {
+        await uploadedImage.move(imagesDir, {
+          name: `${cuid()}.${uploadedImage.extname}`,
         })
-        imagePaths.push(image.fileName as string)
+        imagePaths.push(uploadedImage.fileName as string)
       }
 
       await ProductImage.createMany(
@@ -87,7 +87,7 @@ export default class ProductsController {
       .where('id', productId)
       .preload('category', (query) => query.select('id', 'name'))
       .preload('supplier', (query) => query.select('id', 'name'))
-      .preload('variants', (query) => query.preload('variantType'))
+      .preload('variants', (query) => query.preload('type'))
       .preload('images', (query) => query.select('path', 'product_id', 'id'))
       .firstOrFail()
 

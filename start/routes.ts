@@ -6,6 +6,7 @@ const AuthController = () => import('#controllers/auth_controller')
 const CategoriesController = () => import('#controllers/categories_controller')
 const ProductsController = () => import('#controllers/products_controller')
 const UserAddressesController = () => import('#controllers/user_addresses_controller')
+const OrdersController = () => import('#controllers/orders_controller')
 
 router.post('/auth/sign-up', [AuthController, 'signUp'])
 router.post('/auth/sign-in', [AuthController, 'signIn'])
@@ -18,6 +19,8 @@ router
     router
       .resource('/user-addresses', UserAddressesController)
       .only(['store', 'destroy', 'index', 'show'])
+
+    router.resource('/orders', OrdersController).only(['index', 'show', 'store'])
   })
   .middleware(middleware.auth())
 

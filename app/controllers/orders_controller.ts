@@ -8,12 +8,13 @@ export default class OrdersController {
     const perPage = request.input('perPage', 50)
     const status = request.input('status')
 
-    const query = await Order.query()
-      .if(user.role != 'admin', (query) => query.where('customer_id', user.id))
+    const orders = await Order.query()
+      .if(user.role !== 'admin', (query) => query.where('customer_id', user.id))
       .if(status, (query) => query.where('status', status))
+      .orderBy('created_at', 'desc')
       .paginate(page, perPage)
 
-    return query
+    return orders
   }
 
   async show({ request, auth }: HttpContext) {
@@ -21,8 +22,8 @@ export default class OrdersController {
     const orderId = request.param('id')
 
     const order = await Order.query()
-      .if(user.role != 'admin', (query) => query.where('customer_id', user.id))
-      .if(user.role == 'admin', (query) => query.preload('customer'))
+      .if(user.role !== 'admin', (query) => query.where('customer_id', user.id))
+      .if(user.role === 'admin', (query) => query.preload('customer'))
       .where('id', orderId)
       .preload('items', (query) => query.select('id', 'product_id', 'order_id').preload('product'))
       .preload('payment')

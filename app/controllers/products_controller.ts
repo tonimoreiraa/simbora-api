@@ -324,10 +324,11 @@ export default class ProductsController {
       const imagesDir = app.tmpPath('uploads')
       let imagePaths: string[] = []
       for (const uploadedImage of images) {
+        const imageName = `${cuid()}.${uploadedImage.extname}`
         await uploadedImage.move(imagesDir, {
-          name: `${cuid()}.${uploadedImage.extname}`,
+          name: imageName,
         })
-        imagePaths.push(uploadedImage.fileName as string)
+        imagePaths.push(imageName)
       }
 
       await ProductImage.createMany(
@@ -670,13 +671,14 @@ export default class ProductsController {
         message: 'Você deve enviar uma imagem válida.',
       })
     }
+    const imageName = `${cuid()}.${image.extname}`
     await image.move(app.makePath('storage/uploads'), {
-      name: `${cuid()}.${image.extname}`,
+      name: imageName,
     })
 
     await ProductImage.create({
       productId: product.id,
-      path: image.filePath as string,
+      path: imageName,
     })
 
     return response.safeStatus(200).json({ message: 'OK' })

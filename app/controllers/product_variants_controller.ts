@@ -150,11 +150,12 @@ export default class ProductVariantsController {
       })
     }
 
+    const imageName = `${cuid()}.${image.extname}`
     await image.move(app.makePath('storage/uploads'), {
-      name: `${cuid()}.${image.extname}`,
+      name: imageName,
     })
 
-    const productVariant = await ProductVariant.create({ ...payload, photo: image.fileName })
+    const productVariant = await ProductVariant.create({ ...payload, photo: imageName })
     return productVariant.serialize()
   }
 
@@ -355,10 +356,10 @@ export default class ProductVariantsController {
 
     let imagePath: undefined | string
     if (image) {
+      imagePath = `${cuid()}.${image.extname}`
       await image.move(app.makePath('storage/uploads'), {
-        name: `${cuid()}.${image.extname}`,
+        name: imagePath,
       })
-      imagePath = image.fileName
     }
 
     productVariant.merge({ ...payload, photo: imagePath })

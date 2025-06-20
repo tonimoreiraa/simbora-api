@@ -365,4 +365,10 @@ export default class AuthController {
     const token = await User.accessTokens.create(user)
     return { user, token }
   }
+
+  async getSession({ auth }: HttpContext) {
+    const user = auth.getUserOrFail()
+
+    return user
+  }
 }

@@ -39,6 +39,7 @@ router
       .only(['store', 'destroy', 'index', 'show'])
 
     router.resource('/orders', OrdersController).only(['index', 'show', 'store'])
+    router.get('/auth/session', [AuthController, 'getSession'])
   })
   .middleware(middleware.auth())
 

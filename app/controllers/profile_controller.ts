@@ -15,7 +15,7 @@ export function preparePhoneNumber(value: string) {
   return value
 }
 
-export default class ProfilesController {
+export default class ProfileController {
   async update({ request, auth, response }: HttpContext) {
     const payload = await request.validateUsing(updateProfileSchema)
     const user = auth.getUserOrFail()
@@ -51,6 +51,12 @@ export default class ProfilesController {
 
     user.merge({ ...payload, avatar: avatarName })
     await user.save()
+
+    return user
+  }
+  async index({ auth }: HttpContext) {
+    const user = auth.getUserOrFail()
+    await user.load('addresses')
 
     return user
   }

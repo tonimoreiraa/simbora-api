@@ -10,6 +10,7 @@ const ProductsController = () => import('#controllers/products_controller')
 const UserAddressesController = () => import('#controllers/user_addresses_controller')
 const OrdersController = () => import('#controllers/orders_controller')
 const SwaggerController = () => import('#controllers/swagger_controller')
+const ProfileController = () => import('#controllers/profile_controller')
 
 // ========================================
 // ROTAS DA DOCUMENTAÇÃO SWAGGER
@@ -40,6 +41,7 @@ router
 
     router.resource('/orders', OrdersController).only(['index', 'show', 'store'])
     router.get('/auth/session', [AuthController, 'getSession'])
+    router.resource('/profile', ProfileController).only(['index', 'update'])
   })
   .middleware(middleware.auth())
 

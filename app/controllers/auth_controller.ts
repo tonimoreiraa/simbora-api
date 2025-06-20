@@ -3,7 +3,7 @@ import { signUpSchema } from '#validators/auth'
 import { cuid } from '@adonisjs/core/helpers'
 import type { HttpContext } from '@adonisjs/core/http'
 import app from '@adonisjs/core/services/app'
-import { preparePhoneNumber } from './profiles_controller.js'
+import { preparePhoneNumber } from './profile_controller.js'
 
 export default class AuthController {
   /**

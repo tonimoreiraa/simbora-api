@@ -8,6 +8,7 @@ import { UserAddress } from './user_address.js'
 import { Order } from './order.js'
 import { Supplier } from './supplier.js'
 import type { HasMany } from '@adonisjs/lucid/types/relations'
+import env from '#start/env'
 
 const AuthFinder = withAuthFinder(() => hash.use('scrypt'), {
   uids: ['email'],
@@ -33,7 +34,9 @@ export default class User extends compose(BaseModel, AuthFinder) {
   @column()
   declare role: 'customer' | 'admin' | 'professional' | 'supplier'
 
-  @column()
+  @column({
+    serialize: (value) => env.get('PUBLIC_URL') + '/uploads/' + value,
+  })
   declare avatar: string | null
 
   @column()

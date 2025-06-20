@@ -3,6 +3,7 @@ import { signUpSchema } from '#validators/auth'
 import { cuid } from '@adonisjs/core/helpers'
 import type { HttpContext } from '@adonisjs/core/http'
 import app from '@adonisjs/core/services/app'
+import { preparePhoneNumber } from './profiles_controller.js'
 
 export default class AuthController {
   /**
@@ -363,6 +364,7 @@ export default class AuthController {
    */
   async signUp({ request }: HttpContext) {
     const payload = await request.validateUsing(signUpSchema)
+
     const avatar = request.file('avatar', {
       size: '2mb',
       extnames: ['jpg', 'png', 'jpeg'],
@@ -374,6 +376,11 @@ export default class AuthController {
         name: avatarName,
       })
     }
+
+    if (payload.phoneNumber) {
+      payload.phoneNumber = preparePhoneNumber(payload.phoneNumber)
+    }
+
     const user = await User.create({ ...payload, avatar: avatarName })
     const token = await User.accessTokens.create(user)
     return { user, token }

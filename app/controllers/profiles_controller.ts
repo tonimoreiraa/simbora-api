@@ -4,6 +4,17 @@ import { cuid } from '@adonisjs/core/helpers'
 import type { HttpContext } from '@adonisjs/core/http'
 import app from '@adonisjs/core/services/app'
 
+export function preparePhoneNumber(value: string) {
+  value = value.replace(/\D+/g, '')
+  if (value.length < 10 || value.length > 11) {
+    throw new Error('Número de telefone inválido.')
+  }
+  if (value.startsWith('55') && value.length > 11) {
+    throw new Error('Não inclua o código do país no número de telefone.')
+  }
+  return value
+}
+
 export default class ProfilesController {
   async update({ request, auth, response }: HttpContext) {
     const payload = await request.validateUsing(updateProfileSchema)
@@ -20,6 +31,10 @@ export default class ProfilesController {
           message: `O usuário ${payload.username} já existe`,
         })
       }
+    }
+
+    if (payload.phoneNumber) {
+      payload.phoneNumber = preparePhoneNumber(payload.phoneNumber)
     }
 
     const avatar = request.file('avatar', {

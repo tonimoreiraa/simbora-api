@@ -26,5 +26,6 @@ export const updateProfileSchema = vine.compile(
         size: '2mb',
       })
       .optional(),
+    phoneNumber: vine.string().trim().minLength(10).optional(),
   })
 )

@@ -1,6 +1,8 @@
 import User from '#models/user'
 import { signUpSchema } from '#validators/auth'
+import { cuid } from '@adonisjs/core/helpers'
 import type { HttpContext } from '@adonisjs/core/http'
+import app from '@adonisjs/core/services/app'
 
 export default class AuthController {
   /**
@@ -361,7 +363,18 @@ export default class AuthController {
    */
   async signUp({ request }: HttpContext) {
     const payload = await request.validateUsing(signUpSchema)
-    const user = await User.create(payload)
+    const avatar = request.file('avatar', {
+      size: '2mb',
+      extnames: ['jpg', 'png', 'jpeg'],
+    })
+    let avatarName: string | undefined
+    if (avatar) {
+      avatarName = `${cuid()}.${avatar.extname}`
+      await avatar.move(app.makePath('storage/uploads'), {
+        name: avatarName,
+      })
+    }
+    const user = await User.create({ ...payload, avatar: avatarName })
     const token = await User.accessTokens.create(user)
     return { user, token }
   }

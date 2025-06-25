@@ -604,6 +604,84 @@ export default class ProductsController {
 
   /**
    * @swagger
+   * /products/{id}:
+   *   delete:
+   *     tags:
+   *       - Products
+   *     summary: Excluir produto
+   *     description: Exclui um produto e todos os seus dados relacionados (imagens, variantes)
+   *     security:
+   *       - BearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: integer
+   *         description: ID do produto a ser excluído
+   *         example: 15
+   *     responses:
+   *       200:
+   *         description: Produto excluído com sucesso
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 message:
+   *                   type: string
+   *                   example: "Produto excluído com sucesso"
+   *       400:
+   *         description: Erro na exclusão do produto
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 message:
+   *                   type: string
+   *                   example: "Não foi possível excluir o produto"
+   *       401:
+   *         description: Usuário não autenticado
+   *       404:
+   *         description: Produto não encontrado
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 message:
+   *                   type: string
+   *                   example: "E_ROW_NOT_FOUND: Row not found"
+   */
+  async destroy({ request, response, auth }: HttpContext) {
+    await auth.authenticate()
+    if (auth.user?.role !== 'admin') {
+      return response.unauthorized({ message: 'Acesso restrito a administradores.' })
+    }
+
+    const productId = request.param('id')
+
+    try {
+      const product = await Product.findOrFail(productId)
+      await ProductImage.query().where('product_id', productId).delete()
+
+      await product.related('variants').query().delete()
+
+      await product.delete()
+
+      return response.ok({
+        message: 'Produto excluído com sucesso',
+      })
+    } catch (error) {
+      return response.badRequest({
+        message: 'Não foi possível excluir o produto',
+      })
+    }
+  }
+
+  /**
+   * @swagger
    * /products/add-photo:
    *   post:
    *     tags:

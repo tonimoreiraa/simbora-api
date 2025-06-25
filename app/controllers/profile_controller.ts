@@ -318,7 +318,7 @@ export default class ProfileController {
    *                         example: 1
    *                       name:
    *                         type: string
-   *                         description: Nome do endereço (ex: Casa, Trabalho)
+   *                         description: Nome do endereço (ex Casa, Trabalho)
    *                         example: "Casa"
    *                       streetName:
    *                         type: string

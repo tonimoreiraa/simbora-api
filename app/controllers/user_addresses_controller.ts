@@ -181,7 +181,7 @@ export default class UserAddressesController {
    *                 example: "22071-900"
    *               country:
    *                 type: string
-   *                 description: País (padrão: Brasil)
+   *                 description: País
    *                 example: "Brasil"
    *     responses:
    *       201:

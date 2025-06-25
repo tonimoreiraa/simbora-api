@@ -53,6 +53,12 @@ export default class OrdersController {
    *           ]
    *         description: Filtrar por status do pedido
    *         example: "Processing"
+   *       - in: query
+   *         name: withDetails
+   *         schema:
+   *           type: boolean
+   *         description: Incluir detalhes dos itens, pagamento e envio
+   *         example: true
    *     responses:
    *       200:
    *         description: Lista de pedidos retornada com sucesso
@@ -75,10 +81,96 @@ export default class OrdersController {
    *                       status:
    *                         type: string
    *                         example: "Processing"
-   *                       total:
+   *                       subtotalPrice:
+   *                         type: number
+   *                         format: decimal
+   *                         example: 249.99
+   *                       totalPrice:
    *                         type: number
    *                         format: decimal
    *                         example: 299.99
+   *                       discountPrice:
+   *                         type: number
+   *                         format: decimal
+   *                         example: 20.00
+   *                       shippingPrice:
+   *                         type: number
+   *                         format: decimal
+   *                         example: 30.00
+   *                       paymentId:
+   *                         type: integer
+   *                         nullable: true
+   *                         example: 5
+   *                       shippingId:
+   *                         type: integer
+   *                         nullable: true
+   *                         example: 8
+   *                       itemsCount:
+   *                         type: integer
+   *                         description: Quantidade total de itens
+   *                         example: 3
+   *                       customer:
+   *                         type: object
+   *                         description: Dados básicos do cliente (apenas para admins)
+   *                         nullable: true
+   *                         properties:
+   *                           id:
+   *                             type: integer
+   *                             example: 10
+   *                           name:
+   *                             type: string
+   *                             example: "João Silva"
+   *                           email:
+   *                             type: string
+   *                             example: "joao@email.com"
+   *                       payment:
+   *                         type: object
+   *                         nullable: true
+   *                         description: Informações básicas de pagamento (se withDetails=true)
+   *                         properties:
+   *                           status:
+   *                             type: string
+   *                             example: "paid"
+   *                           paymentMethod:
+   *                             type: string
+   *                             example: "credit_card"
+   *                           price:
+   *                             type: number
+   *                             format: decimal
+   *                             example: 299.99
+   *                       shipping:
+   *                         type: object
+   *                         nullable: true
+   *                         description: Informações básicas de envio (se withDetails=true)
+   *                         properties:
+   *                           provider:
+   *                             type: string
+   *                             example: "Correios"
+   *                           shippingCode:
+   *                             type: string
+   *                             nullable: true
+   *                             example: "BR123456789"
+   *                           city:
+   *                             type: string
+   *                             example: "São Paulo"
+   *                           state:
+   *                             type: string
+   *                             example: "SP"
+   *                       lastUpdate:
+   *                         type: object
+   *                         nullable: true
+   *                         description: Última atualização do pedido (se withDetails=true)
+   *                         properties:
+   *                           status:
+   *                             type: string
+   *                             example: "Shipped"
+   *                           title:
+   *                             type: string
+   *                             example: "Pedido enviado"
+   *                           createdAt:
+   *                             type: string
+   *                             format: date-time
+   *                             example: "2024-01-15T14:30:00.000Z"
    *                       createdAt:
    *                         type: string
    *                         format: date-time
@@ -140,12 +232,46 @@ export default class OrdersController {
     const page = request.input('page', 1)
     const perPage = request.input('perPage', 50)
     const status = request.input('status')
+    const withDetails = request.input('withDetails', false)
 
-    const orders = await Order.query()
-      .if(user.role !== 'admin', (query) => query.where('customer_id', user.id))
-      .if(status, (query) => query.where('status', status))
-      .orderBy('created_at', 'desc')
-      .paginate(page, perPage)
+    const query = Order.query()
+      .if(user.role !== 'admin', (q) => q.where('customer_id', user.id))
+      .if(status, (q) => q.where('status', status))
+      .if(user.role === 'admin', (q) =>
+        q.preload('customer', (customerQuery) => {
+          customerQuery.select('id', 'name', 'email')
+        })
+      )
+
+    query.withCount('items', (itemsQuery) => {
+      itemsQuery.as('itemsCount')
+    })
+
+    if (withDetails) {
+      query
+        .preload('payment', (paymentQuery) => {
+          paymentQuery.select(
+            'id',
+            'order_id',
+            'status',
+            'payment_method',
+            'price',
+            'payment_provider'
+          )
+        })
+        .preload('shipping', (shippingQuery) => {
+          shippingQuery.select('order_id', 'provider', 'shipping_code', 'city', 'state', 'price')
+        })
+        .preload('updates', (updatesQuery) => {
+          updatesQuery
+            .select('id', 'order_id', 'status', 'title', 'created_at')
+            .where('private', false)
+            .orderBy('created_at', 'desc')
+            .limit(1)
+        })
+    }
+
+    const orders = await query.orderBy('created_at', 'desc').paginate(page, perPage)
 
     return orders
   }

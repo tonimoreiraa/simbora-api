@@ -52,6 +52,7 @@ export default class AuthController {
    *                       example: 1
    *                     name:
    *                       type: string
+   *                       nullable: true
    *                       description: Nome completo do usuário
    *                       example: "João Silva"
    *                     email:
@@ -61,13 +62,24 @@ export default class AuthController {
    *                       example: "joao@email.com"
    *                     username:
    *                       type: string
+   *                       nullable: true
    *                       description: Nome de usuário único
    *                       example: "joao.silva"
    *                     role:
    *                       type: string
-   *                       enum: [customer, professional]
+   *                       enum: [customer, admin, professional, supplier]
    *                       description: Papel do usuário no sistema
    *                       example: "customer"
+   *                     avatar:
+   *                       type: string
+   *                       format: uri
+   *                       nullable: true
+   *                       description: URL completa do avatar do usuário
+   *                       example: "https://api.exemplo.com/uploads/avatar123.jpg"
+   *                     phoneNumber:
+   *                       type: string
+   *                       description: Número de telefone formatado
+   *                       example: "11987654321"
    *                     createdAt:
    *                       type: string
    *                       format: date-time
@@ -180,11 +192,11 @@ export default class AuthController {
    *     tags:
    *       - Authentication
    *     summary: Cadastro de novo usuário
-   *     description: Cria uma nova conta de usuário no sistema com os dados fornecidos
+   *     description: Cria uma nova conta de usuário no sistema com os dados fornecidos, incluindo upload opcional de avatar
    *     requestBody:
    *       required: true
    *       content:
-   *         application/json:
+   *         multipart/form-data:
    *           schema:
    *             type: object
    *             required:
@@ -220,9 +232,62 @@ export default class AuthController {
    *                 example: "MinhaSenh@123"
    *               role:
    *                 type: string
-   *                 enum: [customer, professional]
+   *                 enum: [customer, admin, professional, supplier]
    *                 description: Papel do usuário no sistema
    *                 example: "customer"
+   *               phoneNumber:
+   *                 type: string
+   *                 pattern: "^[0-9]{10,11}$"
+   *                 description: Número de telefone brasileiro (10 ou 11 dígitos, sem código do país)
+   *                 example: "11987654321"
+   *               avatar:
+   *                 type: string
+   *                 format: binary
+   *                 description: Arquivo de imagem para avatar (JPG, PNG ou JPEG, máximo 2MB)
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - name
+   *               - email
+   *               - username
+   *               - password
+   *               - role
+   *             properties:
+   *               name:
+   *                 type: string
+   *                 minLength: 2
+   *                 maxLength: 100
+   *                 description: Nome completo do usuário
+   *                 example: "João Silva"
+   *               email:
+   *                 type: string
+   *                 format: email
+   *                 description: Email único do usuário
+   *                 example: "joao@email.com"
+   *               username:
+   *                 type: string
+   *                 minLength: 3
+   *                 maxLength: 50
+   *                 pattern: "^[a-zA-Z0-9._-]+$"
+   *                 description: Nome de usuário único
+   *                 example: "joao.silva"
+   *               password:
+   *                 type: string
+   *                 format: password
+   *                 minLength: 8
+   *                 description: Senha do usuário
+   *                 example: "MinhaSenh@123"
+   *               role:
+   *                 type: string
+   *                 enum: [customer, admin, professional, supplier]
+   *                 description: Papel do usuário no sistema
+   *                 example: "customer"
+   *               phoneNumber:
+   *                 type: string
+   *                 pattern: "^[0-9]{10,11}$"
+   *                 description: Número de telefone brasileiro
+   *                 example: "11987654321"
    *     responses:
    *       201:
    *         description: Usuário criado com sucesso
@@ -240,6 +305,7 @@ export default class AuthController {
    *                       example: 2
    *                     name:
    *                       type: string
+   *                       nullable: true
    *                       description: Nome completo do usuário
    *                       example: "João Silva"
    *                     email:
@@ -249,13 +315,24 @@ export default class AuthController {
    *                       example: "joao@email.com"
    *                     username:
    *                       type: string
+   *                       nullable: true
    *                       description: Nome de usuário único
    *                       example: "joao.silva"
    *                     role:
    *                       type: string
-   *                       enum: [customer, professional]
+   *                       enum: [customer, admin, professional, supplier]
    *                       description: Papel do usuário no sistema
    *                       example: "customer"
+   *                     avatar:
+   *                       type: string
+   *                       format: uri
+   *                       nullable: true
+   *                       description: URL completa do avatar do usuário
+   *                       example: "https://api.exemplo.com/uploads/avatar123.jpg"
+   *                     phoneNumber:
+   *                       type: string
+   *                       description: Número de telefone formatado
+   *                       example: "11987654321"
    *                     createdAt:
    *                       type: string
    *                       format: date-time
@@ -314,6 +391,7 @@ export default class AuthController {
    *                   example:
    *                     email: ["O campo email é obrigatório"]
    *                     password: ["O campo senha é obrigatório"]
+   *                     phoneNumber: ["Número de telefone inválido."]
    *       409:
    *         description: Email ou username já existem
    *         content:
@@ -329,6 +407,16 @@ export default class AuthController {
    *                   example:
    *                     email: ["Este email já está em uso"]
    *                     username: ["Este username já está em uso"]
+   *       413:
+   *         description: Arquivo muito grande
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 message:
+   *                   type: string
+   *                   example: "O arquivo de avatar não pode exceder 2MB"
    *       422:
    *         description: Erro de validação
    *         content:
@@ -350,7 +438,8 @@ export default class AuthController {
    *                     password: ["A senha deve ter no mínimo 8 caracteres"]
    *                     name: ["O nome deve ter no mínimo 2 caracteres"]
    *                     username: ["O username deve ter no mínimo 3 caracteres"]
-   *                     role: ["O role deve ser: customer ou professional"]
+   *                     role: ["O role deve ser: customer, admin, professional ou supplier"]
+   *                     phoneNumber: ["O telefone deve ter entre 10 e 11 dígitos"]
    *       500:
    *         description: Erro interno do servidor
    *         content:
@@ -386,6 +475,89 @@ export default class AuthController {
     return { user, token }
   }
 
+  /**
+   * @swagger
+   * /auth/session:
+   *   get:
+   *     tags:
+   *       - Authentication
+   *     summary: Obter sessão atual
+   *     description: Retorna os dados do usuário autenticado da sessão atual
+   *     security:
+   *       - bearerAuth: []
+   *     responses:
+   *       200:
+   *         description: Dados da sessão retornados com sucesso
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 id:
+   *                   type: integer
+   *                   description: ID único do usuário
+   *                   example: 1
+   *                 name:
+   *                   type: string
+   *                   nullable: true
+   *                   description: Nome completo do usuário
+   *                   example: "João Silva"
+   *                 username:
+   *                   type: string
+   *                   nullable: true
+   *                   description: Nome de usuário único
+   *                   example: "joao.silva"
+   *                 email:
+   *                   type: string
+   *                   format: email
+   *                   description: Email do usuário
+   *                   example: "joao@email.com"
+   *                 role:
+   *                   type: string
+   *                   enum: [customer, admin, professional, supplier]
+   *                   description: Papel do usuário no sistema
+   *                   example: "customer"
+   *                 avatar:
+   *                   type: string
+   *                   format: uri
+   *                   nullable: true
+   *                   description: URL completa do avatar do usuário
+   *                   example: "https://api.exemplo.com/uploads/avatar123.jpg"
+   *                 phoneNumber:
+   *                   type: string
+   *                   description: Número de telefone formatado
+   *                   example: "11987654321"
+   *                 createdAt:
+   *                   type: string
+   *                   format: date-time
+   *                   description: Data de criação do usuário
+   *                   example: "2024-01-15T10:30:00.000Z"
+   *                 updatedAt:
+   *                   type: string
+   *                   format: date-time
+   *                   description: Data da última atualização
+   *                   example: "2024-01-15T10:30:00.000Z"
+   *       401:
+   *         description: Token de acesso inválido ou expirado
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 message:
+   *                   type: string
+   *                   example: "Token de acesso inválido"
+   *       500:
+   *         description: Erro interno do servidor
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 message:
+   *                   type: string
+   *                   example: "Erro interno do servidor"
+   */
   async getSession({ auth }: HttpContext) {
     const user = auth.getUserOrFail()
 

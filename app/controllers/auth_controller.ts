@@ -3,7 +3,6 @@ import { signUpSchema } from '#validators/auth'
 import { cuid } from '@adonisjs/core/helpers'
 import type { HttpContext } from '@adonisjs/core/http'
 import app from '@adonisjs/core/services/app'
-import { preparePhoneNumber } from './profile_controller.js'
 
 export default class AuthController {
   /**
@@ -467,6 +466,8 @@ export default class AuthController {
     }
 
     if (payload.phoneNumber) {
+      // Import the function dynamically
+      const { preparePhoneNumber } = await import('./profile_controller.js')
       payload.phoneNumber = preparePhoneNumber(payload.phoneNumber)
     }
 

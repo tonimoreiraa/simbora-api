@@ -100,7 +100,7 @@ export default class AuthController {
    *                       type: string
    *                       description: Nome do token
    *                       example: "API Token"
-   *                     hash:
+   *                     token:
    *                       type: string
    *                       description: Hash do token para autenticação
    *                       example: "oat_1.abc123def456ghi789"

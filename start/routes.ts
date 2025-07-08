@@ -48,7 +48,8 @@ router
 
     router.get('/auth/session', [AuthController, 'getSession'])
 
-    router.resource('/profile', ProfileController).only(['index', 'update'])
+    router.get('/profile', [ProfileController, 'index'])
+    router.put('/profile', [ProfileController, 'update'])
 
     router.get('/coupons', [CouponsController, 'index'])
     router.get('/coupons/:code', [CouponsController, 'verifyCoupon'])

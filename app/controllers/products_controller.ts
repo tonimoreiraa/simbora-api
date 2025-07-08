@@ -8,7 +8,7 @@ import { ProductVariantType } from '#models/product_variant_type'
 
 export default class ProductsController {
 /**
-* * @swagger
+* * *@swagger*
 * * /products:*
 * * get:*
 * * tags:*
@@ -197,7 +197,7 @@ return products
  }
 
 /**
-* @swagger
+* *@swagger*
 * * /products:*
 * * post:*
 * * tags:*
@@ -448,7 +448,7 @@ return product.serialize()
  }
 
 /**
-* * @swagger
+* * *@*swagger*
 * * /products/{id}:*
 * * get:*
 * * tags:*
@@ -603,7 +603,7 @@ return product
  }
 
 /**
-* * @swagger
+* * *@*swagger*
 * * /products/{id}:*
 * * put:*
 * * tags:*
@@ -767,7 +767,7 @@ return product.serialize()
  }
 
 /**
-* * @swagger
+* * *@*swagger*
 * * /products/{id}:*
 * * delete:*
 * * tags:*
@@ -845,7 +845,7 @@ return response.badRequest({
  }
 
 /**
-* * @swagger
+* * *@*swagger*
 * * /products/add-photo:*
 * * post:*
 * * tags:*

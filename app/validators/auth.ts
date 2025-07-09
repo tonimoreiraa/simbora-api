@@ -11,8 +11,8 @@ export const signUpSchema = vine.compile(
       .regex(/^[a-z0-9._]+$/)
       .regex(/^(?!.*\.\.)(?!.*\.$)[a-z0-9._]+$/)
       .unique(async (db, value) => {
-        const user = db.from('users').where('username', value).first()
-        return user
+        const user = await db.from('users').where('username', value).first()
+        return !user
       }),
     password: vine
       .string()

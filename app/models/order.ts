@@ -35,13 +35,19 @@ export class Order extends BaseModel {
   @column()
   declare paymentId: number
 
-  @belongsTo(() => User)
+  @belongsTo(() => User, {
+    foreignKey: 'customerId'
+  })
   declare customer: BelongsTo<typeof User>
 
-  @belongsTo(() => OrderShipping)
+  @belongsTo(() => OrderShipping, {
+    foreignKey: 'shippingId'
+  })
   declare shipping: BelongsTo<typeof OrderShipping>
 
-  @belongsTo(() => OrderPayment)
+  @belongsTo(() => OrderPayment, {
+    foreignKey: 'paymentId'
+  })
   declare payment: BelongsTo<typeof OrderPayment>
 
   @hasMany(() => OrderItem)

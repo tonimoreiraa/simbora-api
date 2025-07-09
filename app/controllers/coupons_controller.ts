@@ -164,6 +164,8 @@ export default class CouponsController {
       .if(categoryId, (q) => q.where('categoryId', categoryId))
       .if(supplierId, (q) => q.where('supplierId', supplierId))
       .if(active, (q) => q.where('active', true))
+      .preload('category')
+      .preload('supplier')
     return coupons.map((c) => c.serialize())
   }
 

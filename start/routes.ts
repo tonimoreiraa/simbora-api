@@ -14,6 +14,7 @@ const OrdersController = () => import('#controllers/orders_controller')
 const SwaggerController = () => import('#controllers/swagger_controller')
 const ProfileController = () => import('#controllers/profile_controller')
 const CouponsController = () => import('#controllers/coupons_controller')
+const UsersController = () => import('#controllers/users_controller')
 
 //* ========================================*
 //* ROTAS DA DOCUMENTAÇÃO SWAGGER*
@@ -63,6 +64,8 @@ router
     router
       .resource('/product-variant-types', ProductVariantTypesController)
       .only(['store', 'update', 'destroy'])
+
+    router.get('/users', [UsersController, 'index'])
   })
   .middleware(middleware.auth())
 

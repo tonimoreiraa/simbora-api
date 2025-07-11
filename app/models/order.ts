@@ -36,17 +36,17 @@ export class Order extends BaseModel {
   declare paymentId: number
 
   @belongsTo(() => User, {
-    foreignKey: 'customerId'
+    foreignKey: 'customerId',
   })
   declare customer: BelongsTo<typeof User>
 
   @belongsTo(() => OrderShipping, {
-    foreignKey: 'shippingId'
+    foreignKey: 'shippingId',
   })
   declare shipping: BelongsTo<typeof OrderShipping>
 
   @belongsTo(() => OrderPayment, {
-    foreignKey: 'paymentId'
+    foreignKey: 'paymentId',
   })
   declare payment: BelongsTo<typeof OrderPayment>
 

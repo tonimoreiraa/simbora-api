@@ -1,9 +1,7 @@
-//* start/routes.ts*
 import app from '@adonisjs/core/services/app'
 import router from '@adonisjs/core/services/router'
 import { middleware } from './kernel.js'
 
-//* Controllers*
 const AuthController = () => import('#controllers/auth_controller')
 const CategoriesController = () => import('#controllers/categories_controller')
 const ProductsController = () => import('#controllers/products_controller')
@@ -15,30 +13,16 @@ const SwaggerController = () => import('#controllers/swagger_controller')
 const ProfileController = () => import('#controllers/profile_controller')
 const CouponsController = () => import('#controllers/coupons_controller')
 const UsersController = () => import('#controllers/users_controller')
+const OrderSharesController = () => import('#controllers/order_shares_controller')
 
-//* ========================================*
-//* ROTAS DA DOCUMENTAÇÃO SWAGGER*
-//* ========================================*
 router.get('/docs', [SwaggerController, 'index'])
 router.get('/openapi', [SwaggerController, 'json'])
-
-//* ========================================*
-//* ROTAS DE AUTHENTICATION*
-//* ========================================*
 router.post('/auth/sign-up', [AuthController, 'signUp'])
 router.post('/auth/sign-in', [AuthController, 'signIn'])
-
-//* ========================================*
-//* ROTAS PÚBLICAS*
-//* ========================================*
 router.resource('/categories', CategoriesController)
 router.resource('/products', ProductsController)
 router.resource('/product-variants', ProductVariantsController).only(['index', 'show'])
 router.resource('/product-variant-types', ProductVariantTypesController).only(['index', 'show'])
-
-//* ========================================*
-//* ROTAS PROTEGIDAS (COM AUTH)*
-//* ========================================*
 router
   .group(() => {
     router
@@ -46,21 +30,18 @@ router
       .only(['store', 'destroy', 'index', 'show'])
 
     router.resource('/orders', OrdersController).only(['index', 'show', 'store'])
-
+    router.post('/order-shares/share', [OrderSharesController, 'share'])
+    router.patch('/order-shares/view', [OrderSharesController, 'view'])
     router.get('/auth/session', [AuthController, 'getSession'])
-
     router.get('/profile', [ProfileController, 'index'])
     router.put('/profile', [ProfileController, 'update'])
-
-    router.get('/coupons', [CouponsController, 'index'])
-    router.get('/coupons/:code', [CouponsController, 'verifyCoupon'])
-
-    // Product Variants - operações de criação, atualização e exclusão protegidas
+    router
+      .resource('/coupons', CouponsController)
+      .only(['index', 'show', 'store', 'update', 'destroy'])
+    router.get('/coupons/:code/verify', [CouponsController, 'verifyCoupon'])
     router
       .resource('/product-variants', ProductVariantTypesController)
       .only(['store', 'update', 'destroy'])
-
-    // Product Variant Types - operações de criação, atualização e exclusão protegidas
     router
       .resource('/product-variant-types', ProductVariantTypesController)
       .only(['store', 'update', 'destroy'])
@@ -69,9 +50,6 @@ router
   })
   .middleware(middleware.auth())
 
-//* ========================================*
-//* ROTA PARA SERVIR ARQUIVOS UPLOADS*
-//* ========================================*
 router.get('/uploads/:file', async ({ response, params }) => {
   const filePath = app.tmpPath(`uploads/${params.file}`)
   response.attachment(filePath, params.file)

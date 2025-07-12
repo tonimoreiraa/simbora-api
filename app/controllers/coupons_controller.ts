@@ -1,4 +1,5 @@
 import Coupon from '#models/coupon'
+import { createCouponValidator, updateCouponValidator } from '#validators/coupon'
 import type { HttpContext } from '@adonisjs/core/http'
 
 export default class CouponsController {
@@ -313,5 +314,541 @@ export default class CouponsController {
       .firstOrFail()
     //* TODO: Create supplier, category and minOrderValue validation*
     return coupon
+  }
+
+  /**
+   * @swagger
+   * /coupons/{id}:
+   *   get:
+   *     tags:
+   *       - Coupons
+   *     summary: Obter detalhes de um cupom
+   *     description: Obtém os detalhes de um cupom específico pelo ID. Requer permissão de administrador.
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: integer
+   *         description: ID do cupom
+   *         example: 1
+   *     responses:
+   *       200:
+   *         description: Detalhes do cupom retornados com sucesso
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 id:
+   *                   type: integer
+   *                   example: 1
+   *                 code:
+   *                   type: string
+   *                   example: "DESCONTO10"
+   *                 description:
+   *                   type: string
+   *                   example: "10% de desconto em produtos selecionados"
+   *                 type:
+   *                   type: string
+   *                   enum: [percent, fixed, shipping]
+   *                   example: "percent"
+   *                 value:
+   *                   type: number
+   *                   example: 10.0
+   *                 minOrderValue:
+   *                   type: number
+   *                   example: 100.00
+   *                 maxUses:
+   *                   type: integer
+   *                   example: 100
+   *                 usesCount:
+   *                   type: integer
+   *                   example: 25
+   *                 maxUsesPerUser:
+   *                   type: integer
+   *                   example: 1
+   *                 validFrom:
+   *                   type: string
+   *                   format: date-time
+   *                   example: "2024-01-01T00:00:00.000Z"
+   *                 validUntil:
+   *                   type: string
+   *                   format: date-time
+   *                   example: "2024-12-31T23:59:59.000Z"
+   *                 active:
+   *                   type: boolean
+   *                   example: true
+   *                 supplierId:
+   *                   type: integer
+   *                   example: 2
+   *                 categoryId:
+   *                   type: integer
+   *                   example: 1
+   *                 createdAt:
+   *                   type: string
+   *                   format: date-time
+   *                   example: "2024-01-15T10:30:00.000Z"
+   *                 updatedAt:
+   *                   type: string
+   *                   format: date-time
+   *                   example: "2024-01-15T10:30:00.000Z"
+   *       401:
+   *         description: Token de acesso inválido ou expirado
+   *       403:
+   *         description: Usuário não tem permissão de administrador
+   *       404:
+   *         description: Cupom não encontrado
+   *       500:
+   *         description: Erro interno do servidor
+   */
+  async show({ params, auth, response }: HttpContext) {
+    const user = auth.getUserOrFail()
+    if (user.role !== 'admin') {
+      return response.unauthorized({
+        message: 'Você não tem acesso a este método.',
+      })
+    }
+
+    const coupon = await Coupon.findOrFail(params.id)
+    await coupon.load('category')
+    await coupon.load('supplier')
+    return coupon.serialize()
+  }
+
+  /**
+   * @swagger
+   * /coupons:
+   *   post:
+   *     tags:
+   *       - Coupons
+   *     summary: Criar novo cupom
+   *     description: Cria um novo cupom de desconto. Requer permissão de administrador.
+   *     security:
+   *       - bearerAuth: []
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - code
+   *               - description
+   *               - type
+   *               - value
+   *               - maxUses
+   *               - validFrom
+   *               - validUntil
+   *             properties:
+   *               code:
+   *                 type: string
+   *                 description: Código único do cupom (será convertido para maiúsculo)
+   *                 example: "DESCONTO10"
+   *               description:
+   *                 type: string
+   *                 description: Descrição do cupom
+   *                 example: "10% de desconto em produtos selecionados"
+   *               type:
+   *                 type: string
+   *                 enum: [percent, fixed, shipping]
+   *                 description: Tipo do desconto
+   *                 example: "percent"
+   *               value:
+   *                 type: number
+   *                 minimum: 0
+   *                 description: Valor do desconto (percentual de 0-100 para percent, valor fixo para fixed/shipping)
+   *                 example: 10.0
+   *               minOrderValue:
+   *                 type: number
+   *                 minimum: 0
+   *                 description: Valor mínimo do pedido para usar o cupom
+   *                 example: 100.00
+   *               maxUses:
+   *                 type: integer
+   *                 minimum: 1
+   *                 description: Máximo de usos do cupom
+   *                 example: 100
+   *               maxUsesPerUser:
+   *                 type: integer
+   *                 minimum: 1
+   *                 description: Máximo de usos por usuário
+   *                 example: 1
+   *               validFrom:
+   *                 type: string
+   *                 format: date-time
+   *                 description: Data de início da validade
+   *                 example: "2024-01-01T00:00:00.000Z"
+   *               validUntil:
+   *                 type: string
+   *                 format: date-time
+   *                 description: Data de fim da validade
+   *                 example: "2024-12-31T23:59:59.000Z"
+   *               active:
+   *                 type: boolean
+   *                 description: Status de ativação do cupom
+   *                 default: true
+   *                 example: true
+   *               supplierId:
+   *                 type: integer
+   *                 description: ID do fornecedor associado (opcional)
+   *                 example: 2
+   *               categoryId:
+   *                 type: integer
+   *                 description: ID da categoria associada (opcional)
+   *                 example: 1
+   *     responses:
+   *       201:
+   *         description: Cupom criado com sucesso
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 id:
+   *                   type: integer
+   *                   example: 1
+   *                 code:
+   *                   type: string
+   *                   example: "DESCONTO10"
+   *                 description:
+   *                   type: string
+   *                   example: "10% de desconto em produtos selecionados"
+   *                 type:
+   *                   type: string
+   *                   example: "percent"
+   *                 value:
+   *                   type: number
+   *                   example: 10.0
+   *                 minOrderValue:
+   *                   type: number
+   *                   example: 100.00
+   *                 maxUses:
+   *                   type: integer
+   *                   example: 100
+   *                 usesCount:
+   *                   type: integer
+   *                   example: 0
+   *                 maxUsesPerUser:
+   *                   type: integer
+   *                   example: 1
+   *                 validFrom:
+   *                   type: string
+   *                   format: date-time
+   *                   example: "2024-01-01T00:00:00.000Z"
+   *                 validUntil:
+   *                   type: string
+   *                   format: date-time
+   *                   example: "2024-12-31T23:59:59.000Z"
+   *                 active:
+   *                   type: boolean
+   *                   example: true
+   *                 supplierId:
+   *                   type: integer
+   *                   example: 2
+   *                 categoryId:
+   *                   type: integer
+   *                   example: 1
+   *                 createdAt:
+   *                   type: string
+   *                   format: date-time
+   *                   example: "2024-01-15T10:30:00.000Z"
+   *                 updatedAt:
+   *                   type: string
+   *                   format: date-time
+   *                   example: "2024-01-15T10:30:00.000Z"
+   *       400:
+   *         description: Dados de entrada inválidos
+   *       401:
+   *         description: Token de acesso inválido ou expirado
+   *       403:
+   *         description: Usuário não tem permissão de administrador
+   *       409:
+   *         description: Código do cupom já existe
+   *       422:
+   *         description: Erro de validação
+   *       500:
+   *         description: Erro interno do servidor
+   */
+  async store({ request, auth, response }: HttpContext) {
+    const user = auth.getUserOrFail()
+    if (user.role !== 'admin') {
+      return response.unauthorized({
+        message: 'Você não tem acesso a este método.',
+      })
+    }
+
+    const data = await request.validateUsing(createCouponValidator)
+
+    // Convert code to uppercase
+    data.code = data.code.toUpperCase()
+
+    try {
+      const coupon = await Coupon.create({
+        ...data,
+        usesCount: 0,
+      })
+
+      await coupon.load('category')
+      await coupon.load('supplier')
+
+      return response.created(coupon.serialize())
+    } catch (error) {
+      if (error.code === '23505') {
+        // PostgreSQL unique constraint violation
+        return response.conflict({
+          message: 'Código do cupom já existe',
+          errors: { code: ['Este código de cupom já está em uso'] },
+        })
+      }
+      throw error
+    }
+  }
+
+  /**
+   * @swagger
+   * /coupons/{id}:
+   *   put:
+   *     tags:
+   *       - Coupons
+   *     summary: Atualizar cupom
+   *     description: Atualiza um cupom existente. Requer permissão de administrador.
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: integer
+   *         description: ID do cupom
+   *         example: 1
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               code:
+   *                 type: string
+   *                 description: Código único do cupom (será convertido para maiúsculo)
+   *                 example: "DESCONTO15"
+   *               description:
+   *                 type: string
+   *                 description: Descrição do cupom
+   *                 example: "15% de desconto em produtos selecionados"
+   *               type:
+   *                 type: string
+   *                 enum: [percent, fixed, shipping]
+   *                 description: Tipo do desconto
+   *                 example: "percent"
+   *               value:
+   *                 type: number
+   *                 minimum: 0
+   *                 description: Valor do desconto
+   *                 example: 15.0
+   *               minOrderValue:
+   *                 type: number
+   *                 minimum: 0
+   *                 description: Valor mínimo do pedido para usar o cupom
+   *                 example: 150.00
+   *               maxUses:
+   *                 type: integer
+   *                 minimum: 1
+   *                 description: Máximo de usos do cupom
+   *                 example: 50
+   *               maxUsesPerUser:
+   *                 type: integer
+   *                 minimum: 1
+   *                 description: Máximo de usos por usuário
+   *                 example: 2
+   *               validFrom:
+   *                 type: string
+   *                 format: date-time
+   *                 description: Data de início da validade
+   *                 example: "2024-02-01T00:00:00.000Z"
+   *               validUntil:
+   *                 type: string
+   *                 format: date-time
+   *                 description: Data de fim da validade
+   *                 example: "2024-03-31T23:59:59.000Z"
+   *               active:
+   *                 type: boolean
+   *                 description: Status de ativação do cupom
+   *                 example: true
+   *               supplierId:
+   *                 type: integer
+   *                 description: ID do fornecedor associado (opcional)
+   *                 example: 3
+   *               categoryId:
+   *                 type: integer
+   *                 description: ID da categoria associada (opcional)
+   *                 example: 2
+   *     responses:
+   *       200:
+   *         description: Cupom atualizado com sucesso
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 id:
+   *                   type: integer
+   *                   example: 1
+   *                 code:
+   *                   type: string
+   *                   example: "DESCONTO15"
+   *                 description:
+   *                   type: string
+   *                   example: "15% de desconto em produtos selecionados"
+   *                 type:
+   *                   type: string
+   *                   example: "percent"
+   *                 value:
+   *                   type: number
+   *                   example: 15.0
+   *                 minOrderValue:
+   *                   type: number
+   *                   example: 150.00
+   *                 maxUses:
+   *                   type: integer
+   *                   example: 50
+   *                 usesCount:
+   *                   type: integer
+   *                   example: 25
+   *                 maxUsesPerUser:
+   *                   type: integer
+   *                   example: 2
+   *                 validFrom:
+   *                   type: string
+   *                   format: date-time
+   *                   example: "2024-02-01T00:00:00.000Z"
+   *                 validUntil:
+   *                   type: string
+   *                   format: date-time
+   *                   example: "2024-03-31T23:59:59.000Z"
+   *                 active:
+   *                   type: boolean
+   *                   example: true
+   *                 supplierId:
+   *                   type: integer
+   *                   example: 3
+   *                 categoryId:
+   *                   type: integer
+   *                   example: 2
+   *                 createdAt:
+   *                   type: string
+   *                   format: date-time
+   *                   example: "2024-01-15T10:30:00.000Z"
+   *                 updatedAt:
+   *                   type: string
+   *                   format: date-time
+   *                   example: "2024-01-15T12:45:00.000Z"
+   *       400:
+   *         description: Dados de entrada inválidos
+   *       401:
+   *         description: Token de acesso inválido ou expirado
+   *       403:
+   *         description: Usuário não tem permissão de administrador
+   *       404:
+   *         description: Cupom não encontrado
+   *       409:
+   *         description: Código do cupom já existe
+   *       422:
+   *         description: Erro de validação
+   *       500:
+   *         description: Erro interno do servidor
+   */
+  async update({ params, request, auth, response }: HttpContext) {
+    const user = auth.getUserOrFail()
+    if (user.role !== 'admin') {
+      return response.unauthorized({
+        message: 'Você não tem acesso a este método.',
+      })
+    }
+
+    const coupon = await Coupon.findOrFail(params.id)
+    const data = await request.validateUsing(updateCouponValidator)
+
+    // Convert code to uppercase if provided
+    if (data.code) {
+      data.code = data.code.toUpperCase()
+    }
+
+    try {
+      coupon.merge(data)
+      await coupon.save()
+
+      await coupon.load('category')
+      await coupon.load('supplier')
+
+      return coupon.serialize()
+    } catch (error) {
+      if (error.code === '23505') {
+        // PostgreSQL unique constraint violation
+        return response.conflict({
+          message: 'Código do cupom já existe',
+          errors: { code: ['Este código de cupom já está em uso'] },
+        })
+      }
+      throw error
+    }
+  }
+
+  /**
+   * @swagger
+   * /coupons/{id}:
+   *   delete:
+   *     tags:
+   *       - Coupons
+   *     summary: Deletar cupom
+   *     description: Deleta um cupom existente. Requer permissão de administrador.
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: integer
+   *         description: ID do cupom
+   *         example: 1
+   *     responses:
+   *       200:
+   *         description: Cupom deletado com sucesso
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 message:
+   *                   type: string
+   *                   example: "Cupom deletado com sucesso"
+   *       401:
+   *         description: Token de acesso inválido ou expirado
+   *       403:
+   *         description: Usuário não tem permissão de administrador
+   *       404:
+   *         description: Cupom não encontrado
+   *       500:
+   *         description: Erro interno do servidor
+   */
+  async destroy({ params, auth, response }: HttpContext) {
+    const user = auth.getUserOrFail()
+    if (user.role !== 'admin') {
+      return response.unauthorized({
+        message: 'Você não tem acesso a este método.',
+      })
+    }
+
+    const coupon = await Coupon.findOrFail(params.id)
+    await coupon.delete()
+
+    return response.ok({
+      message: 'Cupom deletado com sucesso',
+    })
   }
 }

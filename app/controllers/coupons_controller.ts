@@ -165,8 +165,8 @@ export default class CouponsController {
       .if(categoryId, (q) => q.where('categoryId', categoryId))
       .if(supplierId, (q) => q.where('supplierId', supplierId))
       .if(active, (q) => q.where('active', true))
-      .preload('category')
-      .preload('supplier')
+      .preload('category', (categoryQuery) => categoryQuery.whereNotNull('id'))
+      .preload('supplier', (supplierQuery) => supplierQuery.whereNotNull('id'))
     return coupons.map((c) => c.serialize())
   }
 
@@ -413,8 +413,12 @@ export default class CouponsController {
     }
 
     const coupon = await Coupon.findOrFail(params.id)
-    await coupon.load('category')
-    await coupon.load('supplier')
+    if (coupon.categoryId) {
+      await coupon.load('category')
+    }
+    if (coupon.supplierId) {
+      await coupon.load('supplier')
+    }
     return coupon.serialize()
   }
 
@@ -591,8 +595,12 @@ export default class CouponsController {
         usesCount: 0,
       })
 
-      await coupon.load('category')
-      await coupon.load('supplier')
+      if (coupon.categoryId) {
+        await coupon.load('category')
+      }
+      if (coupon.supplierId) {
+        await coupon.load('supplier')
+      }
 
       return response.created(coupon.serialize())
     } catch (error) {
@@ -782,8 +790,12 @@ export default class CouponsController {
       coupon.merge(data)
       await coupon.save()
 
-      await coupon.load('category')
-      await coupon.load('supplier')
+      if (coupon.categoryId) {
+        await coupon.load('category')
+      }
+      if (coupon.supplierId) {
+        await coupon.load('supplier')
+      }
 
       return coupon.serialize()
     } catch (error) {

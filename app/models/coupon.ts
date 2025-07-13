@@ -21,13 +21,13 @@ export default class Coupon extends BaseModel {
   declare minOrderValue: number
 
   @column()
-  declare supplierId: number
+  declare supplierId: number | null
 
   @belongsTo(() => Supplier)
   declare supplier: BelongsTo<typeof Supplier>
 
   @column()
-  declare categoryId: number
+  declare categoryId: number | null
 
   @belongsTo(() => Category)
   declare category: BelongsTo<typeof Category>

@@ -13,7 +13,9 @@ export class ProductVariantType extends BaseModel {
   @column()
   declare defaultUnit: string
 
-  @hasMany(() => ProductVariant)
+  @hasMany(() => ProductVariant, {
+    foreignKey: 'variantTypeId',
+  })
   declare variants: HasMany<typeof ProductVariant>
 
   @column.dateTime({ autoCreate: true })

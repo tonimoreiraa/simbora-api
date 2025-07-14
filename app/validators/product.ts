@@ -34,6 +34,14 @@ export const createProductVariantSchema = vine.compile(
 
 export const updateProductVariantSchema = vine.compile(
   vine.object({
+    variantTypeId: vine
+      .number()
+      .positive()
+      .exists(
+        async (db, value) =>
+          !!(await db.query().select('id').from('product_variant_types').where('id', value).first())
+      )
+      .optional(),
     value: vine.string().optional(),
     unit: vine.string().optional(),
     price: vine.number().positive().optional(),
@@ -82,7 +90,40 @@ export const createProductSchema = vine.compile(
       extnames: ['png', 'jpeg', 'jpg'],
       size: '2mb',
     }),
-    variants: vine.array(vine.object(variantType)).optional(),
+    variants: vine
+      .any()
+      .optional()
+      .transform((value) => {
+        if (!value) return undefined
+        
+        if (Array.isArray(value)) {
+          return value
+        }
+        
+        if (typeof value === 'string') {
+          try {
+            const parsed = JSON.parse(value)
+            if (typeof parsed === 'object' && !Array.isArray(parsed)) {
+              return [parsed]
+            }
+            if (Array.isArray(parsed)) {
+              return parsed
+            }
+            throw new Error('variants deve ser um objeto ou array')
+          } catch (error) {
+            if (error instanceof Error && error.message === 'variants deve ser um objeto ou array') {
+              throw error
+            }
+            throw new Error('variants deve ser um JSON válido')
+          }
+        }
+        
+        if (typeof value === 'object' && value !== null) {
+          return [value]
+        }
+        
+        throw new Error('variants deve ser um array, objeto ou string JSON')
+      }),
   })
 )
 

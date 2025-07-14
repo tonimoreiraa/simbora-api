@@ -1,5 +1,5 @@
 import { ProductVariant } from '#models/product_variant'
-import { createProductVariantSchema } from '#validators/product'
+import { createProductVariantSchema, updateProductVariantSchema } from '#validators/product'
 import { cuid } from '@adonisjs/core/helpers'
 import type { HttpContext } from '@adonisjs/core/http'
 import app from '@adonisjs/core/services/app'
@@ -462,7 +462,7 @@ export default class ProductVariantsController {
     }
 
     const imageName = `${cuid()}.${image.extname}`
-    await image.move(app.makePath('storage/uploads'), {
+    await image.move(app.tmpPath('uploads'), {
       name: imageName,
     })
 
@@ -621,28 +621,39 @@ export default class ProductVariantsController {
    *                   type: string
    *                   example: "Erro interno do servidor"
    */
-  async update({ params, request }: HttpContext) {
-    const productVariantId = params.id
-    const payload = await request.validateUsing(createProductVariantSchema)
-    const image = request.file('photo', {
-      extnames: ['jpg', 'jpeg', 'png'],
-      size: '2mb',
-    })
+  async update({ params, request, response }: HttpContext) {
+    try {
+      const productVariantId = params.id
+      const payload = await request.validateUsing(updateProductVariantSchema)
 
-    const productVariant = await ProductVariant.findOrFail(productVariantId)
-
-    let imagePath: undefined | string
-    if (image) {
-      imagePath = `${cuid()}.${image.extname}`
-      await image.move(app.makePath('storage/uploads'), {
-        name: imagePath,
+      const image = request.file('photo', {
+        extnames: ['jpg', 'jpeg', 'png'],
+        size: '2mb',
       })
+
+      const productVariant = await ProductVariant.findOrFail(productVariantId)
+
+      let imagePath: undefined | string
+      if (image) {
+        imagePath = `${cuid()}.${image.extname}`
+        await image.move(app.tmpPath('uploads'), {
+          name: imagePath,
+        })
+      }
+
+      productVariant.merge({ ...payload, photo: imagePath || productVariant.photo })
+      await productVariant.save()
+
+      return productVariant.serialize()
+    } catch (error) {
+      if (error.status === 422) {
+        return response.unprocessableEntity({
+          message: 'Validation failed',
+          errors: error.messages || error.message,
+        })
+      }
+      throw error
     }
-
-    productVariant.merge({ ...payload, photo: imagePath })
-    await productVariant.save()
-
-    return productVariant.serialize()
   }
 
   /**

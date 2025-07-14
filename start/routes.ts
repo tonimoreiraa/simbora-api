@@ -14,6 +14,7 @@ const ProfileController = () => import('#controllers/profile_controller')
 const CouponsController = () => import('#controllers/coupons_controller')
 const UsersController = () => import('#controllers/users_controller')
 const OrderSharesController = () => import('#controllers/order_shares_controller')
+const SuppliersController = () => import('#controllers/suppliers_controller')
 
 router.get('/docs', [SwaggerController, 'index'])
 router.get('/openapi', [SwaggerController, 'json'])
@@ -23,6 +24,7 @@ router.resource('/categories', CategoriesController)
 router.resource('/products', ProductsController)
 router.resource('/product-variants', ProductVariantsController).only(['index', 'show'])
 router.resource('/product-variant-types', ProductVariantTypesController).only(['index', 'show'])
+router.resource('/suppliers', SuppliersController).only(['index', 'show'])
 router
   .group(() => {
     router
@@ -39,8 +41,9 @@ router
       .resource('/coupons', CouponsController)
       .only(['index', 'show', 'store', 'update', 'destroy'])
     router.get('/coupons/:code/verify', [CouponsController, 'verifyCoupon'])
+    router.resource('/suppliers', SuppliersController).only(['store', 'update', 'destroy'])
     router
-      .resource('/product-variants', ProductVariantTypesController)
+      .resource('/product-variants', ProductVariantsController)
       .only(['store', 'update', 'destroy'])
     router
       .resource('/product-variant-types', ProductVariantTypesController)

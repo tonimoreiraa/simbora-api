@@ -3,6 +3,7 @@ import User from './user.js'
 import { Product } from './product.js'
 import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
+import env from '#start/env'
 
 export class Supplier extends BaseModel {
   @column({ isPrimary: true })
@@ -11,7 +12,9 @@ export class Supplier extends BaseModel {
   @column()
   declare name: string
 
-  @column()
+  @column({
+    serialize: (value) => (value ? env.get('PUBLIC_URL') + '/uploads/' + value : null),
+  })
   declare photo: string
 
   @column()

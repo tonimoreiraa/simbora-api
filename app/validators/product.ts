@@ -146,7 +146,7 @@ export const updateProductSchema = vine.compile(
         async (db, value) =>
           !!(await db.query().select('id').from('categories').where('id', value).first())
       ),
-    tags: vine.array(vine.string()).nullable(),
+    tags: vine.array(vine.string()).optional().nullable(),
     stock: vine.number().positive().withoutDecimals().optional(),
   })
 )

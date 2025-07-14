@@ -21,7 +21,7 @@ export const signUpSchema = vine.compile(
       .regex(/[a-z]/)
       .regex(/[0-9]/)
       .regex(/[\W_]/),
-    role: vine.enum(['customer', 'professional']),
+    role: vine.enum(['customer', 'professional', 'supplier']),
     avatar: vine
       .file({
         extnames: ['jpeg', 'png', 'jpg'],

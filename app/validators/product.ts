@@ -95,11 +95,11 @@ export const createProductSchema = vine.compile(
       .optional()
       .transform((value) => {
         if (!value) return undefined
-        
+
         if (Array.isArray(value)) {
           return value
         }
-        
+
         if (typeof value === 'string') {
           try {
             const parsed = JSON.parse(value)
@@ -111,17 +111,20 @@ export const createProductSchema = vine.compile(
             }
             throw new Error('variants deve ser um objeto ou array')
           } catch (error) {
-            if (error instanceof Error && error.message === 'variants deve ser um objeto ou array') {
+            if (
+              error instanceof Error &&
+              error.message === 'variants deve ser um objeto ou array'
+            ) {
               throw error
             }
             throw new Error('variants deve ser um JSON válido')
           }
         }
-        
+
         if (typeof value === 'object' && value !== null) {
           return [value]
         }
-        
+
         throw new Error('variants deve ser um array, objeto ou string JSON')
       }),
   })

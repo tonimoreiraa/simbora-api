@@ -19,7 +19,7 @@ export const updateProfileSchema = vine.compile(
       .regex(/[0-9]/)
       .regex(/[\W_]/)
       .optional(),
-    role: vine.enum(['customer', 'professional']).optional(),
+    role: vine.enum(['customer', 'professional', 'supplier']).optional(),
     avatar: vine
       .file({
         extnames: ['jpeg', 'png', 'jpg'],

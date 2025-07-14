@@ -448,6 +448,10 @@ export default class ProductsController {
   async store({ request }: HttpContext) {
     let { images, image, variants, ...payload } = await request.validateUsing(createProductSchema)
 
+    if (!payload.tags) {
+      payload.tags = []
+    }
+
     const product = await Product.create(payload)
 
     if (image) {
@@ -476,13 +480,30 @@ export default class ProductsController {
 
     if (variants) {
       const variantsPayload = await Promise.all(
-        variants.map(async (variant) => {
+        variants.map(async (variant, index) => {
           const variantType = await ProductVariantType.findOrFail(variant.variantTypeId)
           if (variant.unit === null) variant.unit = variantType.defaultUnit
 
-          if (variant.photo) {
-            const photoName = `${cuid()}.${variant.photo.extname}`
-            variant.photo.move(app.tmpPath('uploads'), {
+          const possiblePhotoKeys = [
+            `variant_photo_${index}`,
+            `variants[${index}][photo]`,
+            `variant_${index}_photo`,
+            `photo_${index}`,
+            `variant_photo`,
+            `photo`,
+          ]
+
+          let variantPhoto = null
+          for (const key of possiblePhotoKeys) {
+            variantPhoto = request.file(key)
+            if (variantPhoto) {
+              break
+            }
+          }
+
+          if (variantPhoto && typeof variantPhoto.move === 'function') {
+            const photoName = `${cuid()}.${variantPhoto.extname}`
+            await variantPhoto.move(app.tmpPath('uploads'), {
               name: photoName,
             })
             return {
@@ -490,7 +511,9 @@ export default class ProductsController {
               photo: photoName,
             }
           }
-          return { ...variant, photo: undefined }
+
+          const { photo, ...variantWithoutPhoto } = variant
+          return { ...variantWithoutPhoto, photo: '' }
         })
       )
 
@@ -1083,7 +1106,7 @@ export default class ProductsController {
     }
 
     const imageName = `${cuid()}.${image.extname}`
-    await image.move(app.makePath('storage/uploads'), {
+    await image.move(app.tmpPath('uploads'), {
       name: imageName,
     })
 

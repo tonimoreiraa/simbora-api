@@ -13,7 +13,7 @@ export default class extends BaseSchema {
       ) b
       WHERE a.code = b.code AND a.id <> b.id;
     `)
-    
+
     // Add unique constraint
     this.schema.alterTable(this.tableName, (table) => {
       table.unique(['code'])

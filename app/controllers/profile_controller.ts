@@ -230,7 +230,7 @@ export default class ProfileController {
     let avatarName: string | undefined
     if (avatar) {
       avatarName = `${cuid()}.${avatar.extname}`
-      await avatar.move(app.makePath('storage/uploads'), {
+      await avatar.move(app.makePath('tmp/uploads'), {
         name: avatarName,
       })
     }

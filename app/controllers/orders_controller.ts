@@ -1,4 +1,6 @@
 import { Order } from '#models/order'
+import { Supplier } from '#models/supplier'
+import { OrderActivityService } from '#services/order_activity_service'
 import type { HttpContext } from '@adonisjs/core/http'
 
 export default class OrdersController {
@@ -235,13 +237,21 @@ export default class OrdersController {
     const withDetails = request.input('withDetails', false)
 
     const query = Order.query()
-      .if(user.role !== 'admin', (q) => q.where('customer_id', user.id))
+      .if(user.role === 'customer', (q) => q.where('customer_id', user.id))
       .if(status, (q) => q.where('status', status))
       .if(user.role === 'admin', (q) =>
         q.preload('customer', (customerQuery) => {
           customerQuery.select('id', 'name', 'email')
         })
       )
+      .if(user.role === 'supplier', async (q) => {
+        const supplier = await Supplier.query().where('owner_id', user.id).firstOrFail()
+        q.whereHas('items', (itemQuery) => {
+          itemQuery.whereHas('product', (productQuery) => {
+            productQuery.where('supplier_id', supplier.id)
+          })
+        })
+      })
 
     query.withCount('items', (itemsQuery) => {
       itemsQuery.as('itemsCount')
@@ -463,19 +473,49 @@ export default class OrdersController {
    *                   type: string
    *                   example: "E_ROW_NOT_FOUND: Row not found"
    */
-  async show({ request, auth }: HttpContext) {
+  async show({ request, auth, response }: HttpContext) {
     const user = auth.getUserOrFail()
     const orderId = request.param('id')
 
-    const order = await Order.query()
-      .if(user.role !== 'admin', (query) => query.where('customer_id', user.id))
-      .if(user.role === 'admin', (query) => query.preload('customer'))
+    let query = Order.query()
       .where('id', orderId)
-      .preload('items', (query) => query.select('id', 'product_id', 'order_id').preload('product'))
+      .preload('items', (itemQuery) =>
+        itemQuery.select('id', 'product_id', 'order_id').preload('product')
+      )
       .preload('payment')
       .preload('shipping')
       .preload('updates')
-      .firstOrFail()
+
+    if (user.role === 'customer') {
+      query = query.where('customer_id', user.id)
+    } else if (user.role === 'admin') {
+      query = query.preload('customer')
+    } else if (user.role === 'supplier') {
+      const supplier = await Supplier.query().where('owner_id', user.id).firstOrFail()
+      query = query.whereHas('items', (itemQuery) => {
+        itemQuery.whereHas('product', (productQuery) => {
+          productQuery.where('supplier_id', supplier.id)
+        })
+      })
+    }
+
+    const order = await query.firstOrFail()
+
+    // Verificar se o supplier tem acesso a este pedido
+    if (user.role === 'supplier') {
+      const supplier = await Supplier.query().where('owner_id', user.id).firstOrFail()
+      const hasSupplierProducts = await order
+        .related('items')
+        .query()
+        .whereHas('product', (productQuery) => {
+          productQuery.where('supplier_id', supplier.id)
+        })
+        .first()
+
+      if (!hasSupplierProducts) {
+        return response.unauthorized({ message: 'Você não tem permissão para acessar este pedido' })
+      }
+    }
 
     return order.serialize()
   }
@@ -648,6 +688,9 @@ export default class OrdersController {
       customerId: user.id,
       ...data,
     })
+
+    // Criar log de atividade para criação do pedido
+    await OrderActivityService.logOrderCreated(order.id, user.id, { request } as HttpContext)
 
     return order.serialize()
   }

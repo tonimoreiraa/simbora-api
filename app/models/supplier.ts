@@ -1,6 +1,7 @@
 import { BaseModel, column, belongsTo, hasMany } from '@adonisjs/lucid/orm'
 import User from './user.js'
 import { Product } from './product.js'
+import Coupon from './coupon.js'
 import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
 import env from '#start/env'
@@ -31,6 +32,9 @@ export class Supplier extends BaseModel {
 
   @hasMany(() => Product)
   declare products: HasMany<typeof Product>
+
+  @hasMany(() => Coupon)
+  declare coupons: HasMany<typeof Coupon>
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime

@@ -5,6 +5,7 @@ import app from '@adonisjs/core/services/app'
 import { cuid } from '@adonisjs/core/helpers'
 import ProductImage from '#models/product_image'
 import { ProductVariantType } from '#models/product_variant_type'
+import { Supplier } from '#models/supplier'
 
 export default class ProductsController {
   /**
@@ -201,27 +202,41 @@ export default class ProductsController {
    *                   type: string
    *                   example: "Erro interno do servidor"
    */
-  async index({ request }: HttpContext) {
+  async index({ request, auth }: HttpContext) {
     const userQuery = request.input('query')
     const categoryId = request.input('categoryId')
     const page = request.input('page')
     const perPage = request.input('perPage', 25)
     const groupByCategory = request.input('groupByCategory', false)
 
-    const products = await Product.query()
-      .if(userQuery && userQuery.length, (query) => {
+    let query = Product.query()
+      .if(userQuery && userQuery.length, (productQuery) => {
         const conditions = userQuery.split(/\s+/).map((word: string) => `%${word}%`)
         for (let condition of conditions) {
           condition = `%${condition}%`
-          query.orWhere('name', 'ILIKE', condition).orWhere('description', 'ILIKE', condition)
+          productQuery
+            .orWhere('name', 'ILIKE', condition)
+            .orWhere('description', 'ILIKE', condition)
         }
       })
       .preload('images')
       .preload('supplier')
-      .preload('variants', (query) => query.preload('type'))
-      .if(categoryId, (query) => query.where('category_id', categoryId))
-      .if(groupByCategory, (query) => query.groupBy('category_id'))
-      .paginate(page, perPage)
+      .preload('variants', (variantQuery) => variantQuery.preload('type'))
+      .if(categoryId, (categoryQuery) => categoryQuery.where('category_id', categoryId))
+      .if(groupByCategory, (groupQuery) => groupQuery.groupBy('category_id'))
+
+    // Se o usuário estiver autenticado e for supplier, filtrar apenas seus produtos
+    try {
+      const user = await auth.authenticate()
+      if (user.role === 'supplier') {
+        const supplier = await Supplier.query().where('owner_id', user.id).firstOrFail()
+        query = query.where('supplier_id', supplier.id)
+      }
+    } catch {
+      // Usuário não autenticado ou token inválido - continuar com busca pública
+    }
+
+    const products = await query.paginate(page, perPage)
 
     return products
   }
@@ -445,11 +460,20 @@ export default class ProductsController {
    *                   type: string
    *                   example: "Erro interno do servidor"
    */
-  async store({ request }: HttpContext) {
+  async store({ request, auth }: HttpContext) {
+    await auth.authenticate()
+    const user = auth.getUserOrFail()
+
     let { images, image, variants, ...payload } = await request.validateUsing(createProductSchema)
 
     if (!payload.tags) {
       payload.tags = []
+    }
+
+    // Se for supplier, define automaticamente o supplierId como seu próprio supplier
+    if (user.role === 'supplier') {
+      const supplier = await Supplier.query().where('owner_id', user.id).firstOrFail()
+      payload.supplierId = supplier.id
     }
 
     const product = await Product.create(payload)
@@ -880,11 +904,26 @@ export default class ProductsController {
    *                   type: string
    *                   example: "Erro interno do servidor"
    */
-  async update({ request }: HttpContext) {
+  async update({ request, auth, response }: HttpContext) {
+    await auth.authenticate()
+    const user = auth.getUserOrFail()
     const productId = request.param('id')
     const payload = await request.validateUsing(updateProductSchema)
 
-    const product = await Product.findOrFail(productId)
+    const product = await Product.query().where('id', productId).preload('supplier').firstOrFail()
+
+    // Verificar se o usuário pode editar este produto
+    if (user.role === 'supplier') {
+      const supplier = await Supplier.query().where('owner_id', user.id).firstOrFail()
+      if (product.supplierId !== supplier.id) {
+        return response.unauthorized({ message: 'Você só pode editar seus próprios produtos' })
+      }
+      // Supplier não pode alterar o supplierId
+      if ('supplierId' in payload) {
+        delete (payload as any).supplierId
+      }
+    }
+
     product.merge(payload)
     await product.save()
 
@@ -976,15 +1015,23 @@ export default class ProductsController {
    */
   async destroy({ request, response, auth }: HttpContext) {
     await auth.authenticate()
-
-    if (auth.user?.role !== 'admin') {
-      return response.unauthorized({ message: 'Acesso restrito a administradores.' })
-    }
-
+    const user = auth.getUserOrFail()
     const productId = request.param('id')
 
     try {
-      const product = await Product.findOrFail(productId)
+      const product = await Product.query().where('id', productId).preload('supplier').firstOrFail()
+
+      // Verificar se o usuário pode deletar este produto
+      if (user.role === 'supplier') {
+        const supplier = await Supplier.query().where('owner_id', user.id).firstOrFail()
+        if (product.supplierId !== supplier.id) {
+          return response.unauthorized({ message: 'Você só pode deletar seus próprios produtos' })
+        }
+      } else if (user.role !== 'admin') {
+        return response.unauthorized({
+          message: 'Acesso restrito a administradores ou proprietários.',
+        })
+      }
 
       await ProductImage.query().where('product_id', productId).delete()
       await product.related('variants').query().delete()
@@ -1090,9 +1137,22 @@ export default class ProductsController {
    *                   type: string
    *                   example: "Erro interno do servidor"
    */
-  async addPhoto({ request, response }: HttpContext) {
+  async addPhoto({ request, response, auth }: HttpContext) {
+    await auth.authenticate()
+    const user = auth.getUserOrFail()
     const productId = request.input('productId')
-    const product = await Product.findOrFail(productId)
+
+    const product = await Product.query().where('id', productId).preload('supplier').firstOrFail()
+
+    // Verificar se o usuário pode adicionar foto a este produto
+    if (user.role === 'supplier') {
+      const supplier = await Supplier.query().where('owner_id', user.id).firstOrFail()
+      if (product.supplierId !== supplier.id) {
+        return response.unauthorized({
+          message: 'Você só pode adicionar fotos aos seus próprios produtos',
+        })
+      }
+    }
 
     const image = request.file('image', {
       extnames: ['jpg', 'jpeg', 'png'],

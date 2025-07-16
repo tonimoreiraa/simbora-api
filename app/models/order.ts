@@ -4,6 +4,8 @@ import { OrderShipping } from './order_shipping.js'
 import { OrderPayment } from './order_payment.js'
 import { OrderItem } from './order_item.js'
 import { OrderUpdate } from './order_update.js'
+import { OrderActivityLog } from './order_activity_log.js'
+import Coupon from './coupon.js'
 import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
 
@@ -35,6 +37,9 @@ export class Order extends BaseModel {
   @column()
   declare paymentId: number
 
+  @column()
+  declare couponId: number
+
   @belongsTo(() => User, {
     foreignKey: 'customerId',
   })
@@ -50,11 +55,19 @@ export class Order extends BaseModel {
   })
   declare payment: BelongsTo<typeof OrderPayment>
 
+  @belongsTo(() => Coupon, {
+    foreignKey: 'couponId',
+  })
+  declare coupon: BelongsTo<typeof Coupon>
+
   @hasMany(() => OrderItem)
   declare items: HasMany<typeof OrderItem>
 
   @hasMany(() => OrderUpdate)
   declare updates: HasMany<typeof OrderUpdate>
+
+  @hasMany(() => OrderActivityLog)
+  declare activityLogs: HasMany<typeof OrderActivityLog>
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime

@@ -1,5 +1,6 @@
 import Coupon from '#models/coupon'
 import { createCouponValidator, updateCouponValidator } from '#validators/coupon'
+import { Supplier } from '#models/supplier'
 import type { HttpContext } from '@adonisjs/core/http'
 
 export default class CouponsController {
@@ -151,7 +152,7 @@ export default class CouponsController {
    */
   async index({ request, auth, response }: HttpContext) {
     const user = auth.getUserOrFail()
-    if (user.role !== 'admin') {
+    if (user.role !== 'admin' && user.role !== 'supplier') {
       return response.unauthorized({
         message: 'Você não tem acesso a este método.',
       })
@@ -160,13 +161,22 @@ export default class CouponsController {
     const active = request.input('active', false)
     const categoryId = request.input('categoryId')
     const supplierId = request.input('supplierId')
-    const coupons = await Coupon.query()
+
+    let couponsQuery = Coupon.query()
       .if(query, (q) => q.whereLike('code', `%${query?.toUpperCase()}%`))
       .if(categoryId, (q) => q.where('categoryId', categoryId))
       .if(supplierId, (q) => q.where('supplierId', supplierId))
       .if(active, (q) => q.where('active', true))
       .preload('category', (categoryQuery) => categoryQuery.whereNotNull('id'))
       .preload('supplier', (supplierQuery) => supplierQuery.whereNotNull('id'))
+
+    // Se for supplier, filtrar apenas seus cupons
+    if (user.role === 'supplier') {
+      const supplier = await Supplier.query().where('owner_id', user.id).firstOrFail()
+      couponsQuery = couponsQuery.where('supplierId', supplier.id)
+    }
+
+    const coupons = await couponsQuery
     return coupons.map((c) => c.serialize())
   }
 
@@ -406,13 +416,24 @@ export default class CouponsController {
    */
   async show({ params, auth, response }: HttpContext) {
     const user = auth.getUserOrFail()
-    if (user.role !== 'admin') {
+    if (user.role !== 'admin' && user.role !== 'supplier') {
       return response.unauthorized({
         message: 'Você não tem acesso a este método.',
       })
     }
 
     const coupon = await Coupon.findOrFail(params.id)
+
+    // Se for supplier, verificar se o cupom pertence a ele
+    if (user.role === 'supplier') {
+      const supplier = await Supplier.query().where('owner_id', user.id).firstOrFail()
+      if (coupon.supplierId !== supplier.id) {
+        return response.unauthorized({
+          message: 'Você só pode acessar seus próprios cupons.',
+        })
+      }
+    }
+
     if (coupon.categoryId) {
       await coupon.load('category')
     }
@@ -578,7 +599,7 @@ export default class CouponsController {
    */
   async store({ request, auth, response }: HttpContext) {
     const user = auth.getUserOrFail()
-    if (user.role !== 'admin') {
+    if (user.role !== 'admin' && user.role !== 'supplier') {
       return response.unauthorized({
         message: 'Você não tem acesso a este método.',
       })
@@ -588,6 +609,12 @@ export default class CouponsController {
 
     // Convert code to uppercase
     data.code = data.code.toUpperCase()
+
+    // Se for supplier, definir automaticamente o supplierId
+    if (user.role === 'supplier') {
+      const supplier = await Supplier.query().where('owner_id', user.id).firstOrFail()
+      data.supplierId = supplier.id
+    }
 
     try {
       const coupon = await Coupon.create({
@@ -772,18 +799,36 @@ export default class CouponsController {
    */
   async update({ params, request, auth, response }: HttpContext) {
     const user = auth.getUserOrFail()
-    if (user.role !== 'admin') {
+    if (user.role !== 'admin' && user.role !== 'supplier') {
       return response.unauthorized({
         message: 'Você não tem acesso a este método.',
       })
     }
 
     const coupon = await Coupon.findOrFail(params.id)
+
+    // Se for supplier, verificar se o cupom pertence a ele
+    if (user.role === 'supplier') {
+      const supplier = await Supplier.query().where('owner_id', user.id).firstOrFail()
+      if (coupon.supplierId !== supplier.id) {
+        return response.unauthorized({
+          message: 'Você só pode editar seus próprios cupons.',
+        })
+      }
+    }
+
     const data = await request.validateUsing(updateCouponValidator)
 
     // Convert code to uppercase if provided
     if (data.code) {
       data.code = data.code.toUpperCase()
+    }
+
+    // Supplier não pode alterar o supplierId
+    if (user.role === 'supplier') {
+      if ('supplierId' in data) {
+        delete data.supplierId
+      }
     }
 
     try {
@@ -850,13 +895,24 @@ export default class CouponsController {
    */
   async destroy({ params, auth, response }: HttpContext) {
     const user = auth.getUserOrFail()
-    if (user.role !== 'admin') {
+    if (user.role !== 'admin' && user.role !== 'supplier') {
       return response.unauthorized({
         message: 'Você não tem acesso a este método.',
       })
     }
 
     const coupon = await Coupon.findOrFail(params.id)
+
+    // Se for supplier, verificar se o cupom pertence a ele
+    if (user.role === 'supplier') {
+      const supplier = await Supplier.query().where('owner_id', user.id).firstOrFail()
+      if (coupon.supplierId !== supplier.id) {
+        return response.unauthorized({
+          message: 'Você só pode deletar seus próprios cupons.',
+        })
+      }
+    }
+
     await coupon.delete()
 
     return response.ok({

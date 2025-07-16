@@ -3,6 +3,8 @@ import { createProductVariantSchema, updateProductVariantSchema } from '#validat
 import { cuid } from '@adonisjs/core/helpers'
 import type { HttpContext } from '@adonisjs/core/http'
 import app from '@adonisjs/core/services/app'
+import { Supplier } from '#models/supplier'
+import { Product } from '#models/product'
 
 export default class ProductVariantsController {
   /**
@@ -130,23 +132,36 @@ export default class ProductVariantsController {
    *                   type: string
    *                   example: "Erro interno do servidor"
    */
-  async index({ request }: HttpContext) {
+  async index({ request, auth }: HttpContext) {
     const productId = request.input('productId')
     const variantTypeId = request.input('variantTypeId')
     const value = request.input('value')
 
-    const query = ProductVariant.query().preload('product').preload('type')
+    let query = ProductVariant.query().preload('product').preload('type')
 
     if (productId) {
-      query.where('productId', productId)
+      query = query.where('productId', productId)
     }
 
     if (variantTypeId) {
-      query.where('variantTypeId', variantTypeId)
+      query = query.where('variantTypeId', variantTypeId)
     }
 
     if (value) {
-      query.whereLike('value', `%${value}%`)
+      query = query.whereLike('value', `%${value}%`)
+    }
+
+    // Se o usuário estiver autenticado e for supplier, filtrar apenas variantes de seus produtos
+    try {
+      const user = await auth.authenticate()
+      if (user.role === 'supplier') {
+        const supplier = await Supplier.query().where('owner_id', user.id).firstOrFail()
+        query = query.whereHas('product', (productQuery) => {
+          productQuery.where('supplier_id', supplier.id)
+        })
+      }
+    } catch {
+      // Usuário não autenticado ou token inválido - continuar com busca pública
     }
 
     const variants = await query
@@ -290,7 +305,7 @@ export default class ProductVariantsController {
    *                   type: string
    *                   example: "Erro interno do servidor"
    */
-  async show({ params }: HttpContext) {
+  async show({ params, auth, response }: HttpContext) {
     const variantId = params.id
 
     const variant = await ProductVariant.query()
@@ -298,6 +313,21 @@ export default class ProductVariantsController {
       .preload('product')
       .preload('type')
       .firstOrFail()
+
+    // Se o usuário estiver autenticado e for supplier, verificar se a variante pertence a seus produtos
+    try {
+      const user = await auth.authenticate()
+      if (user.role === 'supplier') {
+        const supplier = await Supplier.query().where('owner_id', user.id).firstOrFail()
+        if (variant.product.supplierId !== supplier.id) {
+          return response.unauthorized({
+            message: 'Você só pode acessar variantes dos seus próprios produtos',
+          })
+        }
+      }
+    } catch {
+      // Usuário não autenticado - continuar com acesso público
+    }
 
     return variant.serialize()
   }
@@ -448,8 +478,22 @@ export default class ProductVariantsController {
    *                   type: string
    *                   example: "Erro interno do servidor"
    */
-  async store({ request, response }: HttpContext) {
+  async store({ request, response, auth }: HttpContext) {
+    await auth.authenticate()
+    const user = auth.getUserOrFail()
     const payload = await request.validateUsing(createProductVariantSchema)
+
+    // Verificar se o usuário pode criar variantes para este produto
+    const product = await Product.findOrFail(payload.productId)
+    if (user.role === 'supplier') {
+      const supplier = await Supplier.query().where('owner_id', user.id).firstOrFail()
+      if (product.supplierId !== supplier.id) {
+        return response.unauthorized({
+          message: 'Você só pode criar variantes para seus próprios produtos',
+        })
+      }
+    }
+
     const image = request.file('photo', {
       extnames: ['jpg', 'jpeg', 'png'],
       size: '2mb',
@@ -621,17 +665,32 @@ export default class ProductVariantsController {
    *                   type: string
    *                   example: "Erro interno do servidor"
    */
-  async update({ params, request, response }: HttpContext) {
+  async update({ params, request, response, auth }: HttpContext) {
     try {
+      await auth.authenticate()
+      const user = auth.getUserOrFail()
       const productVariantId = params.id
       const payload = await request.validateUsing(updateProductVariantSchema)
+
+      const productVariant = await ProductVariant.query()
+        .where('id', productVariantId)
+        .preload('product')
+        .firstOrFail()
+
+      // Verificar se o usuário pode editar esta variante
+      if (user.role === 'supplier') {
+        const supplier = await Supplier.query().where('owner_id', user.id).firstOrFail()
+        if (productVariant.product.supplierId !== supplier.id) {
+          return response.unauthorized({
+            message: 'Você só pode editar variantes dos seus próprios produtos',
+          })
+        }
+      }
 
       const image = request.file('photo', {
         extnames: ['jpg', 'jpeg', 'png'],
         size: '2mb',
       })
-
-      const productVariant = await ProductVariant.findOrFail(productVariantId)
 
       let imagePath: undefined | string
       if (image) {
@@ -708,9 +767,30 @@ export default class ProductVariantsController {
    *                   type: string
    *                   example: "Erro interno do servidor"
    */
-  async destroy({ params }: HttpContext) {
+  async destroy({ params, auth, response }: HttpContext) {
+    await auth.authenticate()
+    const user = auth.getUserOrFail()
     const productVariantId = params.id
-    const productVariant = await ProductVariant.findOrFail(productVariantId)
+
+    const productVariant = await ProductVariant.query()
+      .where('id', productVariantId)
+      .preload('product')
+      .firstOrFail()
+
+    // Verificar se o usuário pode deletar esta variante
+    if (user.role === 'supplier') {
+      const supplier = await Supplier.query().where('owner_id', user.id).firstOrFail()
+      if (productVariant.product.supplierId !== supplier.id) {
+        return response.unauthorized({
+          message: 'Você só pode deletar variantes dos seus próprios produtos',
+        })
+      }
+    } else if (user.role !== 'admin') {
+      return response.unauthorized({
+        message: 'Acesso restrito a administradores ou proprietários',
+      })
+    }
+
     await productVariant.delete()
   }
 }

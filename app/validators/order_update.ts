@@ -32,6 +32,7 @@ export const createOrderUpdateSchema = vine.compile(
     private: vine.boolean().optional(),
     onlyMe: vine.boolean().optional(),
     comment: vine.string().optional(),
-    title: vine.string().optional(),
+    title: vine.string(),
+    orderShippingId: vine.number().optional(),
   })
 )

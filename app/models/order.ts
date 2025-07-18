@@ -35,6 +35,9 @@ export class Order extends BaseModel {
   declare status: string
 
   @column()
+  declare type: 'delivery' | 'pickup'
+
+  @column()
   declare paymentId: number
 
   @column()

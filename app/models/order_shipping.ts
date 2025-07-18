@@ -1,8 +1,9 @@
-import { BaseModel, column, belongsTo } from '@adonisjs/lucid/orm'
+import { BaseModel, column, belongsTo, hasMany } from '@adonisjs/lucid/orm'
 import { Order } from './order.js'
 import User from './user.js'
 import { UserAddress } from './user_address.js'
-import type { BelongsTo } from '@adonisjs/lucid/types/relations'
+import { OrderUpdate } from './order_update.js'
+import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 import { DateTime } from 'luxon'
 
 export class OrderShipping extends BaseModel {
@@ -56,6 +57,12 @@ export class OrderShipping extends BaseModel {
 
   @belongsTo(() => UserAddress)
   declare userAddress: BelongsTo<typeof UserAddress>
+
+  @hasMany(() => OrderUpdate, {
+    foreignKey: 'orderShippingId',
+    localKey: 'orderId',
+  })
+  declare activityLogs: HasMany<typeof OrderUpdate>
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime

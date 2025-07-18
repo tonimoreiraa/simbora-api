@@ -602,6 +602,12 @@ export default class OrdersController {
    *                     enum: ["standard", "express", "same_day"]
    *                     description: Método de envio
    *                     example: "standard"
+   *               type:
+   *                 type: string
+   *                 enum: ["delivery", "pickup"]
+   *                 description: Tipo do pedido - entrega ou retirada
+   *                 example: "delivery"
+   *                 default: "delivery"
    *     responses:
    *       201:
    *         description: Pedido criado com sucesso
@@ -619,6 +625,10 @@ export default class OrdersController {
    *                 status:
    *                   type: string
    *                   example: "Pending"
+   *                 type:
+   *                   type: string
+   *                   enum: ["delivery", "pickup"]
+   *                   example: "delivery"
    *                 total:
    *                   type: number
    *                   format: decimal

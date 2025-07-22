@@ -229,8 +229,13 @@ export default class ProductsController {
     try {
       const user = await auth.authenticate()
       if (user.role === 'supplier') {
-        const supplier = await Supplier.query().where('owner_id', user.id).firstOrFail()
-        query = query.where('supplier_id', supplier.id)
+        const supplier = await Supplier.query().where('owner_id', user.id).first()
+        if (!supplier) {
+          // Se supplier não existir, retornar consulta vazia
+          query = query.where('id', -1)
+        } else {
+          query = query.where('supplier_id', supplier.id)
+        }
       }
     } catch {
       // Usuário não autenticado ou token inválido - continuar com busca pública
@@ -460,7 +465,7 @@ export default class ProductsController {
    *                   type: string
    *                   example: "Erro interno do servidor"
    */
-  async store({ request, auth }: HttpContext) {
+  async store({ request, auth, response }: HttpContext) {
     await auth.authenticate()
     const user = auth.getUserOrFail()
 
@@ -472,7 +477,10 @@ export default class ProductsController {
 
     // Se for supplier, define automaticamente o supplierId como seu próprio supplier
     if (user.role === 'supplier') {
-      const supplier = await Supplier.query().where('owner_id', user.id).firstOrFail()
+      const supplier = await Supplier.query().where('owner_id', user.id).first()
+      if (!supplier) {
+        return response.unauthorized({ message: 'Fornecedor não encontrado para este usuário' })
+      }
       payload.supplierId = supplier.id
     }
 
@@ -914,7 +922,10 @@ export default class ProductsController {
 
     // Verificar se o usuário pode editar este produto
     if (user.role === 'supplier') {
-      const supplier = await Supplier.query().where('owner_id', user.id).firstOrFail()
+      const supplier = await Supplier.query().where('owner_id', user.id).first()
+      if (!supplier) {
+        return response.unauthorized({ message: 'Fornecedor não encontrado para este usuário' })
+      }
       if (product.supplierId !== supplier.id) {
         return response.unauthorized({ message: 'Você só pode editar seus próprios produtos' })
       }
@@ -1023,7 +1034,10 @@ export default class ProductsController {
 
       // Verificar se o usuário pode deletar este produto
       if (user.role === 'supplier') {
-        const supplier = await Supplier.query().where('owner_id', user.id).firstOrFail()
+        const supplier = await Supplier.query().where('owner_id', user.id).first()
+        if (!supplier) {
+          return response.unauthorized({ message: 'Fornecedor não encontrado para este usuário' })
+        }
         if (product.supplierId !== supplier.id) {
           return response.unauthorized({ message: 'Você só pode deletar seus próprios produtos' })
         }
@@ -1146,7 +1160,10 @@ export default class ProductsController {
 
     // Verificar se o usuário pode adicionar foto a este produto
     if (user.role === 'supplier') {
-      const supplier = await Supplier.query().where('owner_id', user.id).firstOrFail()
+      const supplier = await Supplier.query().where('owner_id', user.id).first()
+      if (!supplier) {
+        return response.unauthorized({ message: 'Fornecedor não encontrado para este usuário' })
+      }
       if (product.supplierId !== supplier.id) {
         return response.unauthorized({
           message: 'Você só pode adicionar fotos aos seus próprios produtos',

@@ -244,11 +244,12 @@ export default class OrdersController {
           customerQuery.select('id', 'name', 'email')
         })
       )
-      .if(user.role === 'supplier', async (q) => {
-        const supplier = await Supplier.query().where('owner_id', user.id).firstOrFail()
+      .if(user.role === 'supplier', (q) => {
         q.whereHas('items', (itemQuery) => {
           itemQuery.whereHas('product', (productQuery) => {
-            productQuery.where('supplier_id', supplier.id)
+            productQuery.whereHas('supplier', (supplierQuery) => {
+              supplierQuery.where('owner_id', user.id)
+            })
           })
         })
       })
@@ -491,7 +492,10 @@ export default class OrdersController {
     } else if (user.role === 'admin') {
       query = query.preload('customer')
     } else if (user.role === 'supplier') {
-      const supplier = await Supplier.query().where('owner_id', user.id).firstOrFail()
+      const supplier = await Supplier.query().where('owner_id', user.id).first()
+      if (!supplier) {
+        return response.unauthorized({ message: 'Fornecedor não encontrado para este usuário' })
+      }
       query = query.whereHas('items', (itemQuery) => {
         itemQuery.whereHas('product', (productQuery) => {
           productQuery.where('supplier_id', supplier.id)
@@ -503,7 +507,10 @@ export default class OrdersController {
 
     // Verificar se o supplier tem acesso a este pedido
     if (user.role === 'supplier') {
-      const supplier = await Supplier.query().where('owner_id', user.id).firstOrFail()
+      const supplier = await Supplier.query().where('owner_id', user.id).first()
+      if (!supplier) {
+        return response.unauthorized({ message: 'Fornecedor não encontrado para este usuário' })
+      }
       const hasSupplierProducts = await order
         .related('items')
         .query()

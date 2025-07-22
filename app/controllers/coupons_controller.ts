@@ -172,11 +172,14 @@ export default class CouponsController {
 
     // Se for supplier, filtrar apenas seus cupons
     if (user.role === 'supplier') {
-      const supplier = await Supplier.query().where('owner_id', user.id).firstOrFail()
+      const supplier = await Supplier.query().where('owner_id', user.id).first()
+      if (!supplier) {
+        return response.unauthorized({ message: 'Fornecedor não encontrado para este usuário' })
+      }
       couponsQuery = couponsQuery.where('supplierId', supplier.id)
     }
 
-    const coupons = await couponsQuery
+    const coupons = await couponsQuery.exec()
     return coupons.map((c) => c.serialize())
   }
 
@@ -426,7 +429,10 @@ export default class CouponsController {
 
     // Se for supplier, verificar se o cupom pertence a ele
     if (user.role === 'supplier') {
-      const supplier = await Supplier.query().where('owner_id', user.id).firstOrFail()
+      const supplier = await Supplier.query().where('owner_id', user.id).first()
+      if (!supplier) {
+        return response.unauthorized({ message: 'Fornecedor não encontrado para este usuário' })
+      }
       if (coupon.supplierId !== supplier.id) {
         return response.unauthorized({
           message: 'Você só pode acessar seus próprios cupons.',
@@ -612,7 +618,10 @@ export default class CouponsController {
 
     // Se for supplier, definir automaticamente o supplierId
     if (user.role === 'supplier') {
-      const supplier = await Supplier.query().where('owner_id', user.id).firstOrFail()
+      const supplier = await Supplier.query().where('owner_id', user.id).first()
+      if (!supplier) {
+        return response.unauthorized({ message: 'Fornecedor não encontrado para este usuário' })
+      }
       data.supplierId = supplier.id
     }
 
@@ -809,7 +818,10 @@ export default class CouponsController {
 
     // Se for supplier, verificar se o cupom pertence a ele
     if (user.role === 'supplier') {
-      const supplier = await Supplier.query().where('owner_id', user.id).firstOrFail()
+      const supplier = await Supplier.query().where('owner_id', user.id).first()
+      if (!supplier) {
+        return response.unauthorized({ message: 'Fornecedor não encontrado para este usuário' })
+      }
       if (coupon.supplierId !== supplier.id) {
         return response.unauthorized({
           message: 'Você só pode editar seus próprios cupons.',
@@ -905,7 +917,10 @@ export default class CouponsController {
 
     // Se for supplier, verificar se o cupom pertence a ele
     if (user.role === 'supplier') {
-      const supplier = await Supplier.query().where('owner_id', user.id).firstOrFail()
+      const supplier = await Supplier.query().where('owner_id', user.id).first()
+      if (!supplier) {
+        return response.unauthorized({ message: 'Fornecedor não encontrado para este usuário' })
+      }
       if (coupon.supplierId !== supplier.id) {
         return response.unauthorized({
           message: 'Você só pode deletar seus próprios cupons.',

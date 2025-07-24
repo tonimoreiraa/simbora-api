@@ -699,11 +699,26 @@ export default class OrdersController {
    */
   async store({ request, auth }: HttpContext) {
     const user = auth.getUserOrFail()
-    const data = request.only(['items', 'payment', 'shipping'])
+    const data = request.only(['items', 'payment', 'shipping', 'type'])
+
+    // Calculate prices from items
+    const items = data.items || []
+    const subtotalPrice = items.reduce(
+      (sum: number, item: any) => sum + item.price * item.quantity,
+      0
+    )
+    const discountPrice = 0 // Default to 0, can be calculated based on coupons later
+    const shippingPrice = 0 // Default to 0, can be calculated based on shipping method later
+    const totalPrice = subtotalPrice - discountPrice + shippingPrice
 
     const order = await Order.create({
       customerId: user.id,
-      ...data,
+      subtotalPrice,
+      totalPrice,
+      discountPrice,
+      shippingPrice,
+      status: 'Pending',
+      type: data.type || 'delivery',
     })
 
     // Criar log de atividade para criação do pedido

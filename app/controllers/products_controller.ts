@@ -94,6 +94,14 @@ export default class ProductsController {
    *                       stock:
    *                         type: integer
    *                         example: 50
+   *                       createdAt:
+   *                         type: string
+   *                         format: date-time
+   *                         example: "2024-01-15T10:30:00.000Z"
+   *                       updatedAt:
+   *                         type: string
+   *                         format: date-time
+   *                         example: "2024-01-15T12:45:00.000Z"
    *                       supplier:
    *                         type: object
    *                         properties:
@@ -377,6 +385,14 @@ export default class ProductsController {
    *                 stock:
    *                   type: integer
    *                   example: 50
+   *                 createdAt:
+   *                   type: string
+   *                   format: date-time
+   *                   example: "2024-01-15T10:30:00.000Z"
+   *                 updatedAt:
+   *                   type: string
+   *                   format: date-time
+   *                   example: "2024-01-15T12:45:00.000Z"
    *                 variants:
    *                   type: array
    *                   items:
@@ -415,10 +431,6 @@ export default class ProductsController {
    *                           defaultUnit:
    *                             type: string
    *                             example: "unidade"
-   *                 createdAt:
-   *                   type: string
-   *                   format: date-time
-   *                   example: "2024-01-15T16:30:00.000Z"
    *       400:
    *         description: Dados de entrada inválidos
    *         content:
@@ -824,6 +836,14 @@ export default class ProductsController {
    *                 stock:
    *                   type: integer
    *                   example: 30
+   *                 createdAt:
+   *                   type: string
+   *                   format: date-time
+   *                   example: "2024-01-15T10:30:00.000Z"
+   *                 updatedAt:
+   *                   type: string
+   *                   format: date-time
+   *                   example: "2024-01-15T12:45:00.000Z"
    *                 variants:
    *                   type: array
    *                   items:
@@ -862,10 +882,6 @@ export default class ProductsController {
    *                           defaultUnit:
    *                             type: string
    *                             example: "unidade"
-   *                 updatedAt:
-   *                   type: string
-   *                   format: date-time
-   *                   example: "2024-01-15T14:30:00.000Z"
    *       401:
    *         description: Token de acesso inválido ou expirado
    *         content:

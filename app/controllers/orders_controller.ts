@@ -1,6 +1,9 @@
 import { Order } from '#models/order'
+import { OrderItem } from '#models/order_item'
+import { Product } from '#models/product'
 import { Supplier } from '#models/supplier'
 import { OrderActivityService } from '#services/order_activity_service'
+import { createOrderSchema } from '#validators/order'
 import type { HttpContext } from '@adonisjs/core/http'
 
 export default class OrdersController {
@@ -474,9 +477,9 @@ export default class OrdersController {
    *                   type: string
    *                   example: "E_ROW_NOT_FOUND: Row not found"
    */
-  async show({ request, auth, response }: HttpContext) {
+  async show({ params, auth, response }: HttpContext) {
     const user = auth.getUserOrFail()
-    const orderId = request.param('id')
+    const orderId = params.id
 
     let query = Order.query()
       .where('id', orderId)
@@ -552,63 +555,32 @@ export default class OrdersController {
    *                 items:
    *                   type: object
    *                   required:
-   *                     - productId
+   *                     - product_id
    *                     - quantity
-   *                     - price
+   *                     - unit_price
    *                   properties:
-   *                     productId:
+   *                     product_id:
    *                       type: integer
    *                       description: ID do produto
    *                       example: 15
+   *                     product_variant_id:
+   *                       type: integer
+   *                       description: ID da variante do produto (opcional)
+   *                       example: 23
    *                     quantity:
    *                       type: integer
    *                       minimum: 1
    *                       description: Quantidade do produto
    *                       example: 2
-   *                     price:
+   *                     unit_price:
    *                       type: number
    *                       format: decimal
-   *                       description: Preço unitário do produto
+   *                       description: Preço unitário do produto no momento da compra
    *                       example: 149.99
-   *               payment:
-   *                 type: object
-   *                 description: Informações de pagamento
-   *                 properties:
-   *                   method:
-   *                     type: string
-   *                     enum: ["credit_card", "debit_card", "pix", "bank_transfer"]
-   *                     description: Método de pagamento
-   *                     example: "credit_card"
-   *                   installments:
-   *                     type: integer
-   *                     minimum: 1
-   *                     description: Número de parcelas
-   *                     example: 3
-   *               shipping:
-   *                 type: object
-   *                 description: Informações de envio
-   *                 properties:
-   *                   address:
-   *                     type: string
-   *                     description: Endereço de entrega
-   *                     example: "Rua das Flores, 123"
-   *                   city:
-   *                     type: string
-   *                     description: Cidade
-   *                     example: "São Paulo"
-   *                   state:
-   *                     type: string
-   *                     description: Estado
-   *                     example: "SP"
-   *                   zipCode:
-   *                     type: string
-   *                     description: CEP
-   *                     example: "01234-567"
-   *                   method:
-   *                     type: string
-   *                     enum: ["standard", "express", "same_day"]
-   *                     description: Método de envio
-   *                     example: "standard"
+   *               addressId:
+   *                 type: integer
+   *                 description: ID do endereço de entrega (opcional)
+   *                 example: 5
    *               type:
    *                 type: string
    *                 enum: ["delivery", "pickup"]
@@ -645,29 +617,36 @@ export default class OrdersController {
    *                   items:
    *                     type: object
    *                     properties:
+   *                       id:
+   *                         type: integer
+   *                         example: 1
    *                       productId:
    *                         type: integer
    *                         example: 15
+   *                       productVariantId:
+   *                         type: integer
+   *                         nullable: true
+   *                         example: 23
    *                       quantity:
    *                         type: integer
    *                         example: 2
-   *                       price:
+   *                       unitPrice:
    *                         type: number
    *                         format: decimal
    *                         example: 149.99
-   *                 payment:
-   *                   type: object
-   *                   nullable: true
-   *                   example:
-   *                     method: "credit_card"
-   *                     installments: 3
-   *                 shipping:
-   *                   type: object
-   *                   nullable: true
-   *                   example:
-   *                     address: "Rua das Flores, 123"
-   *                     city: "São Paulo"
-   *                     method: "standard"
+   *                       totalPrice:
+   *                         type: number
+   *                         format: decimal
+   *                         example: 299.98
+   *                       product:
+   *                         type: object
+   *                         properties:
+   *                           id:
+   *                             type: integer
+   *                             example: 15
+   *                           name:
+   *                             type: string
+   *                             example: "Smartphone XYZ"
    *                 createdAt:
    *                   type: string
    *                   format: date-time
@@ -699,18 +678,31 @@ export default class OrdersController {
    */
   async store({ request, auth }: HttpContext) {
     const user = auth.getUserOrFail()
-    const data = request.only(['items', 'payment', 'shipping', 'type'])
+    const payload = await request.validateUsing(createOrderSchema)
 
-    // Calculate prices from items
-    const items = data.items || []
-    const subtotalPrice = items.reduce(
-      (sum: number, item: any) => sum + item.price * item.quantity,
-      0
+    // Validate products exist and prepare items with client prices
+    const itemsWithPrices = await Promise.all(
+      payload.items.map(async (item) => {
+        // Verify product exists but use client price
+        await Product.findOrFail(item.product_id)
+        const totalPrice = item.unit_price * item.quantity
+        return {
+          productId: item.product_id,
+          productVariantId: item.product_variant_id,
+          quantity: item.quantity,
+          unitPrice: item.unit_price,
+          totalPrice,
+        }
+      })
     )
+
+    // Calculate order totals
+    const subtotalPrice = itemsWithPrices.reduce((sum, item) => sum + item.totalPrice, 0)
     const discountPrice = 0 // Default to 0, can be calculated based on coupons later
     const shippingPrice = 0 // Default to 0, can be calculated based on shipping method later
     const totalPrice = subtotalPrice - discountPrice + shippingPrice
 
+    // Create order
     const order = await Order.create({
       customerId: user.id,
       subtotalPrice,
@@ -718,12 +710,28 @@ export default class OrdersController {
       discountPrice,
       shippingPrice,
       status: 'Pending',
-      type: data.type || 'delivery',
+      type: payload.type || 'delivery',
     })
+
+    // Create order items
+    await Promise.all(
+      itemsWithPrices.map((item) =>
+        OrderItem.create({
+          orderId: order.id,
+          ...item,
+        })
+      )
+    )
 
     // Criar log de atividade para criação do pedido
     await OrderActivityService.logOrderCreated(order.id, user.id, { request } as HttpContext)
 
-    return order.serialize()
+    // Return order with items
+    const orderWithItems = await Order.query()
+      .where('id', order.id)
+      .preload('items', (itemQuery) => itemQuery.preload('product'))
+      .first()
+
+    return orderWithItems?.serialize()
   }
 }

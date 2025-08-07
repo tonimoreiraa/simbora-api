@@ -7,6 +7,7 @@ export const createOrderSchema = vine.compile(
         product_id: vine.number(),
         product_variant_id: vine.number().optional(),
         quantity: vine.number(),
+        unit_price: vine.number(),
       })
     ),
     addressId: vine.number().optional(),

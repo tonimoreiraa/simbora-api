@@ -261,6 +261,10 @@ export default class OrdersController {
       itemsQuery.as('itemsCount')
     })
 
+    query.preload('items', (itemsQuery) => {
+      itemsQuery.preload('product').preload('variant')
+    })
+
     if (withDetails) {
       query
         .preload('payment', (paymentQuery) => {

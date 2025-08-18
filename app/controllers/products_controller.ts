@@ -6,6 +6,11 @@ import { cuid } from '@adonisjs/core/helpers'
 import ProductImage from '#models/product_image'
 import { ProductVariantType } from '#models/product_variant_type'
 import { Supplier } from '#models/supplier'
+import { parse } from 'csv-parse/sync';
+import fs from 'fs/promises'
+import { Category } from '#models/category'
+import { parsePriceBR } from '../helpers/parse-price-string.js'
+import { stringify } from 'csv-stringify/sync';
 
 export default class ProductsController {
   /**
@@ -1209,5 +1214,71 @@ export default class ProductsController {
     })
 
     return response.safeStatus(200).json({ message: 'OK' })
+  }
+
+  async importByCsv({ request, response }: HttpContext)
+  {
+    const csvFile = request.file('file')
+    if (!csvFile || !csvFile.tmpPath) {
+      return response.badRequest({
+        message: ''
+      })
+    }
+    const csvContent = (await fs.readFile(csvFile.tmpPath)).toString('utf-8').replace(/^\uFEFF/, '')
+    const delimiter = ';'
+
+    const keys = ['ID', 'Nome', 'Descrição', 'Descrição curta', 'Categoria', 'Tags', 'Estoque', 'Preço']
+    type Keys = 'ID' | 'Nome' | 'Descrição' | 'Descrição curta' | 'Categoria' | 'Tags' | 'Estoque' | 'Preço'
+
+    const data = parse<Record<Keys, string>>(csvContent, {
+      columns: true,
+      skip_empty_lines: true,
+      trim: true,
+      delimiter,
+    })
+    const headers = Object.keys(data[0])
+    for (const header of headers) {
+      if (!keys.includes(header)) {
+        return response.badRequest({
+          message: `Arquivo inválido: coluna inválida: '${header}'.`
+        })
+      }
+    }
+
+    const result: any[] = []
+    for (const product of data) {
+      const payload = {
+        name: product.Nome,
+        tags: product.Tags?.split(' ,'),
+        stock: product.Estoque.length ? parseInt(product.Estoque) : undefined,
+        price: parsePriceBR(product['Preço']),
+        description: product['Descrição'],
+        categoryId: undefined as undefined|number
+      }
+      try {
+        if (product.Categoria?.length) {
+          const category = await Category.updateOrCreate({ name: product.Categoria }, {
+            name: product.Categoria,
+          })
+          payload.categoryId = category.id
+        }
+
+        const updatedProduct = product.ID.length ? await Product.updateOrCreate({
+          id: Number(product.ID),
+        }, payload) : await Product.create(payload)
+        result.push(updatedProduct.serialize())
+      } catch (e) {
+        result.push({ ...payload, error: e.message })
+      }
+    }
+
+    const csv = stringify(result, {
+      header: true,
+      delimiter: ';',
+    })
+
+    response.header('content-type', 'text/csv')
+
+    return csv;
   }
 }

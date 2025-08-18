@@ -65,6 +65,8 @@
     "@adonisjs/lucid": "^21.3.0",
     "@adonisjs/session": "^7.5.0",
     "@vinejs/vine": "^2.1.0",
+    "csv-parse": "^6.1.0",
+    "csv-stringify": "^6.6.0",
     "express": "^5.1.0",
     "luxon": "^3.5.0",
     "pg": "^8.13.1",

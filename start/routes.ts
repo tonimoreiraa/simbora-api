@@ -30,6 +30,8 @@ router.resource('/products', ProductsController)
 router.resource('/product-variants', ProductVariantsController).only(['index', 'show'])
 router.resource('/product-variant-types', ProductVariantTypesController).only(['index', 'show'])
 router.resource('/suppliers', SuppliersController).only(['index', 'show'])
+router.post('/products/import', [ProductsController, 'importByCsv'])
+
 router
   .group(() => {
     router

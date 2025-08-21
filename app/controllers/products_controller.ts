@@ -1227,8 +1227,8 @@ export default class ProductsController {
     const csvContent = (await fs.readFile(csvFile.tmpPath)).toString('utf-8').replace(/^\uFEFF/, '')
     const delimiter = ';'
 
-    const keys = ['ID', 'Nome', 'Descrição', 'Descrição curta', 'Categoria', 'Tags', 'Estoque', 'Preço']
-    type Keys = 'ID' | 'Nome' | 'Descrição' | 'Descrição curta' | 'Categoria' | 'Tags' | 'Estoque' | 'Preço'
+    const keys = ['ID', 'Nome', 'Descrição', 'Descrição curta', 'Categoria', 'Tags', 'Estoque', 'Preço', 'ID Externo']
+    type Keys = 'ID' | 'Nome' | 'Descrição' | 'Descrição curta' | 'Categoria' | 'Tags' | 'Estoque' | 'Preço' | 'ID Externo'
 
     const data = parse<Record<Keys, string>>(csvContent, {
       columns: true,
@@ -1253,7 +1253,8 @@ export default class ProductsController {
         stock: product.Estoque.length ? parseInt(product.Estoque) : undefined,
         price: parsePriceBR(product['Preço']),
         description: product['Descrição'],
-        categoryId: undefined as undefined|number
+        categoryId: undefined as undefined|number,
+        externalId: product['ID Externo'] || undefined,
       }
       try {
         if (product.Categoria?.length) {

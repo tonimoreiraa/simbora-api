@@ -35,6 +35,9 @@ export class Product extends BaseModel {
   @column()
   declare stock: number
 
+  @column()
+  declare externalId: string | null
+
   @belongsTo(() => Supplier)
   declare supplier: BelongsTo<typeof Supplier>
 

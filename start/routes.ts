@@ -53,6 +53,7 @@ router
     router.patch('/order-shares/view', [OrderSharesController, 'view'])
     router.get('/notifications', [NotificationsController, 'index'])
     router.get('/auth/session', [AuthController, 'getSession'])
+    router.delete('/auth/account', [AuthController, 'deleteAccount'])
     router.get('/profile', [ProfileController, 'index'])
     router.put('/profile', [ProfileController, 'update'])
     router

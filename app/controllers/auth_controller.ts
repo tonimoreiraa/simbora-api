@@ -564,4 +564,58 @@ export default class AuthController {
 
     return user
   }
+
+  /**
+   * @swagger
+   * /auth/account:
+   *   delete:
+   *     tags:
+   *       - Authentication
+   *     summary: Deletar conta do usuário
+   *     description: Remove permanentemente a conta do usuário autenticado, incluindo todos os dados relacionados e revogando todos os tokens de acesso
+   *     security:
+   *       - bearerAuth: []
+   *     responses:
+   *       200:
+   *         description: Conta deletada com sucesso
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 message:
+   *                   type: string
+   *                   example: "Conta deletada com sucesso"
+   *       401:
+   *         description: Token de acesso inválido ou expirado
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 message:
+   *                   type: string
+   *                   example: "Token de acesso inválido"
+   *       500:
+   *         description: Erro interno do servidor
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 message:
+   *                   type: string
+   *                   example: "Erro ao deletar conta"
+   */
+  async deleteAccount({ auth, response }: HttpContext) {
+    const user = auth.getUserOrFail()
+
+    // Revoke all access tokens for this user
+    await User.accessTokens.delete(user, user.currentAccessToken.identifier)
+
+    // Delete the user (cascade will handle related records)
+    await user.delete()
+
+    return response.ok({ message: 'Conta deletada com sucesso' })
+  }
 }

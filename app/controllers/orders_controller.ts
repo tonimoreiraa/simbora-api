@@ -241,6 +241,7 @@ export default class OrdersController {
 
     const query = Order.query()
       .if(user.role === 'customer', (q) => q.where('customer_id', user.id))
+      .if(user.role === 'professional', (q) => q.where('customer_id', user.id))
       .if(status, (q) => q.where('status', status))
       .if(user.role === 'admin', (q) =>
         q.preload('customer', (customerQuery) => {

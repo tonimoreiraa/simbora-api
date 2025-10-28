@@ -554,6 +554,10 @@ export default class OrdersController {
    *             required:
    *               - items
    *             properties:
+   *               shareWithUserId:
+   *                 type: integer
+   *                 description: ID do usuário que vai compartilhar
+   *                 example: 1
    *               items:
    *                 type: array
    *                 description: Itens do pedido

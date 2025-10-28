@@ -12,5 +12,6 @@ export const createOrderSchema = vine.compile(
     ),
     addressId: vine.number().optional(),
     type: vine.enum(['delivery', 'pickup']).optional(),
+    shareWithUserId: vine.number().optional()
   })
 )

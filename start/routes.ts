@@ -56,10 +56,10 @@ router
     router.delete('/auth/account', [AuthController, 'deleteAccount'])
     router.get('/profile', [ProfileController, 'index'])
     router.put('/profile', [ProfileController, 'update'])
+    router.get('/coupons/:code/verify', [CouponsController, 'verifyCoupon'])
     router
       .resource('/coupons', CouponsController)
       .only(['index', 'show', 'store', 'update', 'destroy'])
-    router.get('/coupons/:code/verify', [CouponsController, 'verifyCoupon'])
     router.resource('/suppliers', SuppliersController).only(['store', 'update', 'destroy'])
     router
       .resource('/product-variants', ProductVariantsController)

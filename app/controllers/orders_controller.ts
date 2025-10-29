@@ -650,7 +650,7 @@ export default class OrdersController {
     let query = Order.query()
       .where('id', orderId)
       .preload('items', (itemQuery) =>
-        itemQuery.select('id', 'product_id', 'order_id').preload('product')
+        itemQuery.preload('product')
       )
       .preload('payment')
       .preload('shipping')
@@ -693,7 +693,12 @@ export default class OrdersController {
       }
     }
 
-    return order.serialize()
+    const itemsTotalQuantity = order.items.reduce((acc, current) => acc + current.quantity, 0)
+
+    return {
+      ...order.serialize(),
+      itemsTotalQuantity
+    }
   }
 
   /**

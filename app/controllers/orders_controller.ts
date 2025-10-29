@@ -86,6 +86,10 @@ export default class OrdersController {
    *                       status:
    *                         type: string
    *                         example: "Processing"
+   *                       type:
+   *                         type: string
+   *                         enum: ["delivery", "pickup"]
+   *                         example: "delivery"
    *                       subtotalPrice:
    *                         type: number
    *                         format: decimal
@@ -110,10 +114,57 @@ export default class OrdersController {
    *                         type: integer
    *                         nullable: true
    *                         example: 8
+   *                       couponId:
+   *                         type: integer
+   *                         nullable: true
+   *                         example: null
    *                       itemsCount:
    *                         type: integer
    *                         description: Quantidade total de itens
    *                         example: 3
+   *                       items:
+   *                         type: array
+   *                         description: Itens do pedido com produto e variante
+   *                         items:
+   *                           type: object
+   *                           properties:
+   *                             id:
+   *                               type: integer
+   *                               example: 1
+   *                             orderId:
+   *                               type: integer
+   *                               example: 25
+   *                             productId:
+   *                               type: integer
+   *                               example: 15
+   *                             productVariantId:
+   *                               type: integer
+   *                               nullable: true
+   *                               example: 23
+   *                             quantity:
+   *                               type: integer
+   *                               example: 2
+   *                             unitPrice:
+   *                               type: number
+   *                               format: decimal
+   *                               example: 149.99
+   *                             totalPrice:
+   *                               type: number
+   *                               format: decimal
+   *                               example: 299.98
+   *                             product:
+   *                               type: object
+   *                               description: Dados completos do produto
+   *                             variant:
+   *                               type: object
+   *                               nullable: true
+   *                               description: Dados da variante do produto (se houver)
+   *                             createdAt:
+   *                               type: string
+   *                               format: date-time
+   *                             updatedAt:
+   *                               type: string
+   *                               format: date-time
    *                       customer:
    *                         type: object
    *                         description: Dados básicos do cliente (apenas para admins)
@@ -133,6 +184,12 @@ export default class OrdersController {
    *                         nullable: true
    *                         description: Informações básicas de pagamento (se withDetails=true)
    *                         properties:
+   *                           id:
+   *                             type: integer
+   *                             example: 5
+   *                           orderId:
+   *                             type: integer
+   *                             example: 25
    *                           status:
    *                             type: string
    *                             example: "paid"
@@ -143,11 +200,17 @@ export default class OrdersController {
    *                             type: number
    *                             format: decimal
    *                             example: 299.99
+   *                           paymentProvider:
+   *                             type: string
+   *                             example: "stripe"
    *                       shipping:
    *                         type: object
    *                         nullable: true
    *                         description: Informações básicas de envio (se withDetails=true)
    *                         properties:
+   *                           orderId:
+   *                             type: integer
+   *                             example: 25
    *                           provider:
    *                             type: string
    *                             example: "Correios"
@@ -161,21 +224,33 @@ export default class OrdersController {
    *                           state:
    *                             type: string
    *                             example: "SP"
-   *                       lastUpdate:
-   *                         type: object
+   *                           price:
+   *                             type: number
+   *                             format: decimal
+   *                             example: 30.00
+   *                       updates:
+   *                         type: array
    *                         nullable: true
    *                         description: Última atualização do pedido (se withDetails=true)
-   *                         properties:
-   *                           status:
-   *                             type: string
-   *                             example: "Shipped"
-   *                           title:
-   *                             type: string
-   *                             example: "Pedido enviado"
-   *                           createdAt:
-   *                             type: string
-   *                             format: date-time
-   *                             example: "2024-01-15T14:30:00.000Z"
+   *                         items:
+   *                           type: object
+   *                           properties:
+   *                             id:
+   *                               type: integer
+   *                               example: 15
+   *                             orderId:
+   *                               type: integer
+   *                               example: 25
+   *                             status:
+   *                               type: string
+   *                               example: "Shipped"
+   *                             title:
+   *                               type: string
+   *                               example: "Pedido enviado"
+   *                             createdAt:
+   *                               type: string
+   *                               format: date-time
+   *                               example: "2024-01-15T14:30:00.000Z"
    *                       createdAt:
    *                         type: string
    *                         format: date-time
@@ -330,10 +405,38 @@ export default class OrdersController {
    *                 status:
    *                   type: string
    *                   example: "Processing"
-   *                 total:
+   *                 type:
+   *                   type: string
+   *                   enum: ["delivery", "pickup"]
+   *                   example: "delivery"
+   *                 subtotalPrice:
+   *                   type: number
+   *                   format: decimal
+   *                   example: 249.99
+   *                 totalPrice:
    *                   type: number
    *                   format: decimal
    *                   example: 299.99
+   *                 discountPrice:
+   *                   type: number
+   *                   format: decimal
+   *                   example: 20.00
+   *                 shippingPrice:
+   *                   type: number
+   *                   format: decimal
+   *                   example: 30.00
+   *                 paymentId:
+   *                   type: integer
+   *                   nullable: true
+   *                   example: 5
+   *                 shippingId:
+   *                   type: integer
+   *                   nullable: true
+   *                   example: 8
+   *                 couponId:
+   *                   type: integer
+   *                   nullable: true
+   *                   example: null
    *                 customer:
    *                   type: object
    *                   description: Dados do cliente (apenas para admins)
@@ -357,21 +460,30 @@ export default class OrdersController {
    *                       id:
    *                         type: integer
    *                         example: 1
-   *                       productId:
-   *                         type: integer
-   *                         example: 15
    *                       orderId:
    *                         type: integer
    *                         example: 25
+   *                       productId:
+   *                         type: integer
+   *                         example: 15
+   *                       productVariantId:
+   *                         type: integer
+   *                         nullable: true
+   *                         example: 23
    *                       quantity:
    *                         type: integer
    *                         example: 2
-   *                       price:
+   *                       unitPrice:
    *                         type: number
    *                         format: decimal
    *                         example: 149.99
+   *                       totalPrice:
+   *                         type: number
+   *                         format: decimal
+   *                         example: 299.98
    *                       product:
    *                         type: object
+   *                         description: Dados completos do produto
    *                         properties:
    *                           id:
    *                             type: integer
@@ -383,6 +495,12 @@ export default class OrdersController {
    *                             type: number
    *                             format: decimal
    *                             example: 149.99
+   *                       createdAt:
+   *                         type: string
+   *                         format: date-time
+   *                       updatedAt:
+   *                         type: string
+   *                         format: date-time
    *                 payment:
    *                   type: object
    *                   nullable: true
@@ -391,16 +509,28 @@ export default class OrdersController {
    *                     id:
    *                       type: integer
    *                       example: 5
-   *                     method:
-   *                       type: string
-   *                       example: "credit_card"
+   *                     orderId:
+   *                       type: integer
+   *                       example: 25
    *                     status:
    *                       type: string
    *                       example: "paid"
-   *                     amount:
+   *                     paymentMethod:
+   *                       type: string
+   *                       example: "credit_card"
+   *                     price:
    *                       type: number
    *                       format: decimal
    *                       example: 299.99
+   *                     paymentProvider:
+   *                       type: string
+   *                       example: "stripe"
+   *                     createdAt:
+   *                       type: string
+   *                       format: date-time
+   *                     updatedAt:
+   *                       type: string
+   *                       format: date-time
    *                 shipping:
    *                   type: object
    *                   nullable: true
@@ -409,16 +539,38 @@ export default class OrdersController {
    *                     id:
    *                       type: integer
    *                       example: 8
+   *                     orderId:
+   *                       type: integer
+   *                       example: 25
+   *                     provider:
+   *                       type: string
+   *                       example: "Correios"
+   *                     shippingCode:
+   *                       type: string
+   *                       nullable: true
+   *                       example: "BR123456789"
    *                     address:
    *                       type: string
    *                       example: "Rua das Flores, 123"
    *                     city:
    *                       type: string
    *                       example: "São Paulo"
-   *                     trackingCode:
+   *                     state:
    *                       type: string
-   *                       nullable: true
-   *                       example: "BR123456789"
+   *                       example: "SP"
+   *                     zipCode:
+   *                       type: string
+   *                       example: "01234-567"
+   *                     price:
+   *                       type: number
+   *                       format: decimal
+   *                       example: 30.00
+   *                     createdAt:
+   *                       type: string
+   *                       format: date-time
+   *                     updatedAt:
+   *                       type: string
+   *                       format: date-time
    *                 updates:
    *                   type: array
    *                   description: Histórico de atualizações do pedido
@@ -428,6 +580,9 @@ export default class OrdersController {
    *                       id:
    *                         type: integer
    *                         example: 15
+   *                       orderId:
+   *                         type: integer
+   *                         example: 25
    *                       status:
    *                         type: string
    *                         example: "Shipped"
@@ -439,10 +594,16 @@ export default class OrdersController {
    *                         type: string
    *                         nullable: true
    *                         example: "Enviado via transportadora XYZ"
+   *                       private:
+   *                         type: boolean
+   *                         example: false
    *                       createdAt:
    *                         type: string
    *                         format: date-time
    *                         example: "2024-01-15T14:30:00.000Z"
+   *                       updatedAt:
+   *                         type: string
+   *                         format: date-time
    *                 createdAt:
    *                   type: string
    *                   format: date-time
@@ -617,10 +778,34 @@ export default class OrdersController {
    *                   type: string
    *                   enum: ["delivery", "pickup"]
    *                   example: "delivery"
-   *                 total:
+   *                 subtotalPrice:
    *                   type: number
    *                   format: decimal
    *                   example: 299.98
+   *                 totalPrice:
+   *                   type: number
+   *                   format: decimal
+   *                   example: 299.98
+   *                 discountPrice:
+   *                   type: number
+   *                   format: decimal
+   *                   example: 0.00
+   *                 shippingPrice:
+   *                   type: number
+   *                   format: decimal
+   *                   example: 0.00
+   *                 paymentId:
+   *                   type: integer
+   *                   nullable: true
+   *                   example: null
+   *                 shippingId:
+   *                   type: integer
+   *                   nullable: true
+   *                   example: null
+   *                 couponId:
+   *                   type: integer
+   *                   nullable: true
+   *                   example: null
    *                 items:
    *                   type: array
    *                   items:
@@ -629,6 +814,9 @@ export default class OrdersController {
    *                       id:
    *                         type: integer
    *                         example: 1
+   *                       orderId:
+   *                         type: integer
+   *                         example: 26
    *                       productId:
    *                         type: integer
    *                         example: 15
@@ -649,6 +837,7 @@ export default class OrdersController {
    *                         example: 299.98
    *                       product:
    *                         type: object
+   *                         description: Dados completos do produto
    *                         properties:
    *                           id:
    *                             type: integer
@@ -656,6 +845,12 @@ export default class OrdersController {
    *                           name:
    *                             type: string
    *                             example: "Smartphone XYZ"
+   *                       createdAt:
+   *                         type: string
+   *                         format: date-time
+   *                       updatedAt:
+   *                         type: string
+   *                         format: date-time
    *                 createdAt:
    *                   type: string
    *                   format: date-time

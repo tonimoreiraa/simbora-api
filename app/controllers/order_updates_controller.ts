@@ -90,6 +90,11 @@ export default class OrderUpdatesController {
    *                   type: integer
    *                   description: ID do pedido atualizado
    *                   example: 25
+   *                 orderShippingId:
+   *                   type: integer
+   *                   nullable: true
+   *                   description: ID do shipping relacionado
+   *                   example: null
    *                 status:
    *                   type: string
    *                   description: Status aplicado ao pedido
@@ -257,6 +262,10 @@ export default class OrderUpdatesController {
    *                       orderId:
    *                         type: integer
    *                         example: 25
+   *                       orderShippingId:
+   *                         type: integer
+   *                         nullable: true
+   *                         example: null
    *                       status:
    *                         type: string
    *                         example: "Shipped"
@@ -273,6 +282,10 @@ export default class OrderUpdatesController {
    *                         type: boolean
    *                         example: false
    *                       createdAt:
+   *                         type: string
+   *                         format: date-time
+   *                         example: "2024-01-15T14:30:00.000Z"
+   *                       updatedAt:
    *                         type: string
    *                         format: date-time
    *                         example: "2024-01-15T14:30:00.000Z"
@@ -371,6 +384,10 @@ export default class OrderUpdatesController {
    *                 orderId:
    *                   type: integer
    *                   example: 25
+   *                 orderShippingId:
+   *                   type: integer
+   *                   nullable: true
+   *                   example: null
    *                 status:
    *                   type: string
    *                   example: "Shipped"
@@ -392,6 +409,9 @@ export default class OrderUpdatesController {
    *                     id:
    *                       type: integer
    *                       example: 25
+   *                     customerId:
+   *                       type: integer
+   *                       example: 10
    *                     status:
    *                       type: string
    *                       example: "Shipped"

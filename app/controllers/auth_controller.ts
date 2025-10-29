@@ -353,9 +353,9 @@ export default class AuthController {
    *                       type: string
    *                       description: Nome do token
    *                       example: "API Token"
-   *                     hash:
+   *                     token:
    *                       type: string
-   *                       description: Hash do token para autenticação
+   *                       description: Token de autenticação (valor público do token)
    *                       example: "oat_2.xyz789abc123def456"
    *                     abilities:
    *                       type: array

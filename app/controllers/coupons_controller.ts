@@ -185,7 +185,7 @@ export default class CouponsController {
 
   /**
    * @swagger
-   * /coupons/verify/{code}:
+   * /coupons/{code}/verify:
    *   get:
    *     tags:
    *       - Coupons
@@ -321,11 +321,10 @@ export default class CouponsController {
     const coupon = await Coupon.query()
       .where('code', code)
       .where('active', true)
-      .whereRaw('usesCount < maxUses')
-      .where('validFrom', '<=', new Date())
-      .where('validUntil', '>', new Date())
+      .whereRaw('uses_count < max_uses')
+      .where('valid_from', '<=', new Date())
+      .where('valid_until', '>', new Date())
       .firstOrFail()
-    //* TODO: Create supplier, category and minOrderValue validation*
     return coupon
   }
 

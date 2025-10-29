@@ -64,6 +64,9 @@ export default class OrderShippingsController {
    *                       userId:
    *                         type: integer
    *                         example: 10
+   *                       addressId:
+   *                         type: integer
+   *                         example: 5
    *                       price:
    *                         type: number
    *                         format: decimal
@@ -76,14 +79,64 @@ export default class OrderShippingsController {
    *                         example: "BR123456789"
    *                       address:
    *                         type: string
-   *                         example: "Rua das Flores, 123"
+   *                         example: "Rua das Flores"
+   *                       number:
+   *                         type: string
+   *                         example: "123"
    *                       city:
    *                         type: string
    *                         example: "São Paulo"
    *                       state:
    *                         type: string
    *                         example: "SP"
+   *                       zipCode:
+   *                         type: string
+   *                         example: "01234-567"
+   *                       district:
+   *                         type: string
+   *                         example: "Centro"
+   *                       complement:
+   *                         type: string
+   *                         nullable: true
+   *                         example: "Apto 101"
+   *                       country:
+   *                         type: string
+   *                         example: "Brasil"
+   *                       order:
+   *                         type: object
+   *                         description: Dados básicos do pedido
+   *                         properties:
+   *                           id:
+   *                             type: integer
+   *                             example: 25
+   *                           customerId:
+   *                             type: integer
+   *                             example: 10
+   *                           status:
+   *                             type: string
+   *                             example: "Processing"
+   *                           totalPrice:
+   *                             type: number
+   *                             format: decimal
+   *                             example: 299.99
+   *                       user:
+   *                         type: object
+   *                         description: Dados básicos do usuário
+   *                         properties:
+   *                           id:
+   *                             type: integer
+   *                             example: 10
+   *                           name:
+   *                             type: string
+   *                             example: "João Silva"
+   *                           email:
+   *                             type: string
+   *                             example: "joao@email.com"
    *                       createdAt:
+   *                         type: string
+   *                         format: date-time
+   *                         example: "2024-01-15T14:30:00.000Z"
+   *                       updatedAt:
    *                         type: string
    *                         format: date-time
    *                         example: "2024-01-15T14:30:00.000Z"
@@ -166,6 +219,9 @@ export default class OrderShippingsController {
    *                 userId:
    *                   type: integer
    *                   example: 10
+   *                 addressId:
+   *                   type: integer
+   *                   example: 5
    *                 price:
    *                   type: number
    *                   format: decimal
@@ -178,7 +234,7 @@ export default class OrderShippingsController {
    *                   example: "BR123456789"
    *                 address:
    *                   type: string
-   *                   example: "Rua das Flores, 123"
+   *                   example: "Rua das Flores"
    *                 number:
    *                   type: string
    *                   example: "123"
@@ -198,6 +254,39 @@ export default class OrderShippingsController {
    *                   type: string
    *                   nullable: true
    *                   example: "Apto 101"
+   *                 country:
+   *                   type: string
+   *                   example: "Brasil"
+   *                 order:
+   *                   type: object
+   *                   description: Dados básicos do pedido
+   *                   properties:
+   *                     id:
+   *                       type: integer
+   *                       example: 25
+   *                     customerId:
+   *                       type: integer
+   *                       example: 10
+   *                     status:
+   *                       type: string
+   *                       example: "Processing"
+   *                     totalPrice:
+   *                       type: number
+   *                       format: decimal
+   *                       example: 299.99
+   *                 user:
+   *                   type: object
+   *                   description: Dados básicos do usuário
+   *                   properties:
+   *                     id:
+   *                       type: integer
+   *                       example: 10
+   *                     name:
+   *                       type: string
+   *                       example: "João Silva"
+   *                     email:
+   *                       type: string
+   *                       example: "joao@email.com"
    *                 activityLogs:
    *                   type: array
    *                   description: Logs de atividade do envio
@@ -207,6 +296,9 @@ export default class OrderShippingsController {
    *                       id:
    *                         type: integer
    *                         example: 15
+   *                       orderShippingId:
+   *                         type: integer
+   *                         example: 25
    *                       status:
    *                         type: string
    *                         example: "Shipped"
@@ -221,6 +313,10 @@ export default class OrderShippingsController {
    *                         format: date-time
    *                         example: "2024-01-15T14:30:00.000Z"
    *                 createdAt:
+   *                   type: string
+   *                   format: date-time
+   *                   example: "2024-01-15T14:30:00.000Z"
+   *                 updatedAt:
    *                   type: string
    *                   format: date-time
    *                   example: "2024-01-15T14:30:00.000Z"

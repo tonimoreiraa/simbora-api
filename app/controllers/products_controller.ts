@@ -90,6 +90,11 @@ export default class ProductsController {
    *                       categoryId:
    *                         type: integer
    *                         example: 1
+   *                       externalId:
+   *                         type: string
+   *                         nullable: true
+   *                         description: ID externo do produto (usado para importação)
+   *                         example: "PROD-12345"
    *                       tags:
    *                         type: array
    *                         items:
@@ -124,6 +129,9 @@ export default class ProductsController {
    *                             id:
    *                               type: integer
    *                               example: 8
+   *                             productId:
+   *                               type: integer
+   *                               example: 15
    *                             variantTypeId:
    *                               type: integer
    *                               example: 2
@@ -154,6 +162,18 @@ export default class ProductsController {
    *                                 defaultUnit:
    *                                   type: string
    *                                   example: "unidade"
+   *                                 createdAt:
+   *                                   type: string
+   *                                   format: date-time
+   *                                 updatedAt:
+   *                                   type: string
+   *                                   format: date-time
+   *                             createdAt:
+   *                               type: string
+   *                               format: date-time
+   *                             updatedAt:
+   *                               type: string
+   *                               format: date-time
    *                       images:
    *                         type: array
    *                         items:
@@ -172,6 +192,9 @@ export default class ProductsController {
    *                               type: string
    *                               format: date-time
    *                               example: "2024-01-15T10:30:00.000Z"
+   *                             updatedAt:
+   *                               type: string
+   *                               format: date-time
    *                 meta:
    *                   type: object
    *                   properties:
@@ -618,6 +641,11 @@ export default class ProductsController {
    *                 categoryId:
    *                   type: integer
    *                   example: 1
+   *                 externalId:
+   *                   type: string
+   *                   nullable: true
+   *                   description: ID externo do produto (usado para importação)
+   *                   example: "PROD-12345"
    *                 tags:
    *                   type: array
    *                   items:

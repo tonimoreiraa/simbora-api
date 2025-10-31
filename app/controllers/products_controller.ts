@@ -1244,6 +1244,128 @@ export default class ProductsController {
     return response.safeStatus(200).json({ message: 'OK' })
   }
 
+  /**
+   * @swagger
+   * /products/rm-photo/{imageId}:
+   *   delete:
+   *     tags:
+   *       - Products
+   *     summary: Remover foto do produto
+   *     description: Remove uma imagem de um produto existente
+   *     security:
+   *       - bearerAuth: []
+   *     parameters:
+   *       - in: path
+   *         name: imageId
+   *         required: true
+   *         schema:
+   *           type: integer
+   *         description: ID da imagem a ser removida
+   *         example: 1
+   *     responses:
+   *       200:
+   *         description: Imagem removida com sucesso
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 message:
+   *                   type: string
+   *                   example: "Imagem removida com sucesso"
+   *       400:
+   *         description: Erro ao remover imagem
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 message:
+   *                   type: string
+   *                   example: "Não foi possível remover a imagem"
+   *       401:
+   *         description: Token de acesso inválido ou não autorizado
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 message:
+   *                   type: string
+   *                   example: "Você só pode remover fotos dos seus próprios produtos"
+   *       404:
+   *         description: Imagem não encontrada
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 message:
+   *                   type: string
+   *                   example: "E_ROW_NOT_FOUND: Row not found"
+   *       500:
+   *         description: Erro interno do servidor
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 message:
+   *                   type: string
+   *                   example: "Erro interno do servidor"
+   */
+  async rmPhoto({ request, response, auth }: HttpContext) {
+    await auth.authenticate()
+    const user = auth.getUserOrFail()
+    const imageId = request.param('imageId')
+
+    try {
+      const image = await ProductImage.query()
+        .where('id', imageId)
+        .preload('product', (query) => query.preload('supplier'))
+        .firstOrFail()
+
+      const product = image.product
+
+      // Verificar se o usuário pode remover foto deste produto
+      if (user.role === 'supplier') {
+        const supplier = await Supplier.query().where('owner_id', user.id).first()
+        if (!supplier) {
+          return response.unauthorized({ message: 'Fornecedor não encontrado para este usuário' })
+        }
+        if (product.supplierId !== supplier.id) {
+          return response.unauthorized({
+            message: 'Você só pode remover fotos dos seus próprios produtos',
+          })
+        }
+      } else if (user.role !== 'admin') {
+        return response.unauthorized({
+          message: 'Acesso restrito a administradores ou proprietários.',
+        })
+      }
+
+      // Delete the image from database
+      await image.delete()
+
+      // Optionally, delete the physical file from disk
+      try {
+        const filePath = app.tmpPath(`uploads/${image.path}`)
+        await fs.unlink(filePath)
+      } catch (fileError) {
+        // File might not exist, log but don't fail the request
+        console.error('Failed to delete physical file:', fileError)
+      }
+
+      return response.ok({
+        message: 'Imagem removida com sucesso',
+      })
+    } catch (error) {
+      return response.badRequest({
+        message: 'Não foi possível remover a imagem',
+      })
+    }
+  }
+
   async importByCsv({ request, response }: HttpContext)
   {
     const csvFile = request.file('file')

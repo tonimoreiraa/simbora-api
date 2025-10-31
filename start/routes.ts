@@ -32,6 +32,7 @@ router.resource('/product-variant-types', ProductVariantTypesController).only(['
 router.resource('/suppliers', SuppliersController).only(['index', 'show'])
 router.post('/products/import', [ProductsController, 'importByCsv'])
 router.post('/products/add-photo', [ProductsController, 'addPhoto'])
+router.delete('/products/rm-photo/:imageId', [ProductsController, 'rmPhoto'])
 
 router
   .group(() => {

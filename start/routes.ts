@@ -31,6 +31,7 @@ router.resource('/product-variants', ProductVariantsController).only(['index', '
 router.resource('/product-variant-types', ProductVariantTypesController).only(['index', 'show'])
 router.resource('/suppliers', SuppliersController).only(['index', 'show'])
 router.post('/products/import', [ProductsController, 'importByCsv'])
+router.post('/products/add-photo', [ProductsController, 'addPhoto'])
 
 router
   .group(() => {
